@@ -1,0 +1,343 @@
+@model DiemLanh.Application.DTOs.Store.StoreDto
+@using DiemLanh.Domain.Enums
+@{
+    ViewData["Title"] = $"Quản lý {Model.Name}";
+    Layout = "~/Views/Admin/_AdminLayout.cshtml";
+    var currentTab = ViewBag.Tab as string ?? "info";
+
+    var serviceAreas = ViewBag.ServiceAreas as IEnumerable<DiemLanh.Application.DTOs.Store.StoreServiceAreaDto> ?? Enumerable.Empty<DiemLanh.Application.DTOs.Store.StoreServiceAreaDto>();
+    var technicians = ViewBag.Technicians as IEnumerable<TechnicianDto> ?? Enumerable.Empty<TechnicianDto>();
+    var products = ViewBag.Products as DiemLanh.Application.Common.PagedResult<DiemLanh.Application.DTOs.Product.ProductListDto>;
+    var orders = ViewBag.Orders as DiemLanh.Application.Common.PagedResult<DiemLanh.Application.DTOs.Order.OrderListDto>;
+    var repairs = ViewBag.Repairs as DiemLanh.Application.Common.PagedResult<DiemLanh.Application.DTOs.Repair.RepairRequestDto>;
+    var installations = ViewBag.Installations as DiemLanh.Application.Common.PagedResult<DiemLanh.Application.DTOs.Order.InstallationDto>;
+}
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem">
+    <div>
+        <a href="/admin/stores" style="color:var(--grey-mid);font-size:.8rem;text-decoration:none"><i class="bi bi-arrow-left"></i> Danh sách cửa hàng</a>
+        <h2 style="font-weight:800;margin:.25rem 0 0;text-transform:uppercase">@Model.Name</h2>
+        <span class="badge-pill badge-success" style="font-size:.7rem">@Model.StatusDisplay</span>
+    </div>
+    <a href="/stores/@Model.Slug" target="_blank" class="btn-adm btn-adm-outline">
+        <i class="bi bi-box-arrow-up-right"></i> Xem trang Cửa Hàng
+    </a>
+</div>
+
+<!-- Tabs Bar -->
+<div style="display:flex;gap:.5rem;border-bottom:1px solid var(--grey-dark);margin-bottom:1.5rem;overflow-x:auto;padding-bottom:2px">
+    <a href="/admin/stores/@Model.Id/manage?tab=info" class="btn-adm @(currentTab=="info"?"btn-adm-primary":"btn-adm-outline")" style="border-radius:6px 6px 0 0;border-bottom:none"><i class="bi bi-shop"></i> Thông tin cửa hàng</a>
+    <a href="/admin/stores/@Model.Id/manage?tab=areas" class="btn-adm @(currentTab=="areas"?"btn-adm-primary":"btn-adm-outline")" style="border-radius:6px 6px 0 0;border-bottom:none"><i class="bi bi-geo-alt"></i> Khu vực phục vụ (@serviceAreas.Count())</a>
+    <a href="/admin/stores/@Model.Id/manage?tab=techs" class="btn-adm @(currentTab=="techs"?"btn-adm-primary":"btn-adm-outline")" style="border-radius:6px 6px 0 0;border-bottom:none"><i class="bi bi-person-gear"></i> Kỹ thuật viên (@technicians.Count())</a>
+    <a href="/admin/stores/@Model.Id/manage?tab=products" class="btn-adm @(currentTab=="products"?"btn-adm-primary":"btn-adm-outline")" style="border-radius:6px 6px 0 0;border-bottom:none"><i class="bi bi-box-seam"></i> Sản phẩm (@(products?.TotalCount ?? 0))</a>
+    <a href="/admin/stores/@Model.Id/manage?tab=orders" class="btn-adm @(currentTab=="orders"?"btn-adm-primary":"btn-adm-outline")" style="border-radius:6px 6px 0 0;border-bottom:none"><i class="bi bi-receipt"></i> Đơn hàng (@(orders?.TotalCount ?? 0))</a>
+    <a href="/admin/stores/@Model.Id/manage?tab=repairs" class="btn-adm @(currentTab=="repairs"?"btn-adm-primary":"btn-adm-outline")" style="border-radius:6px 6px 0 0;border-bottom:none"><i class="bi bi-wrench-adjustable"></i> Sửa chữa (@(repairs?.TotalCount ?? 0))</a>
+    <a href="/admin/stores/@Model.Id/manage?tab=installations" class="btn-adm @(currentTab=="installations"?"btn-adm-primary":"btn-adm-outline")" style="border-radius:6px 6px 0 0;border-bottom:none"><i class="bi bi-tools"></i> Lắp đặt (@(installations?.TotalCount ?? 0))</a>
+</div>
+
+<!-- Tab Content -->
+@if (currentTab == "info")
+{
+    <form method="post" action="/admin/stores/@Model.Id/update-profile" class="adm-form-section">
+        @Html.AntiForgeryToken()
+        <div class="adm-form-section-title">CHỈNH SỬA THÔNG TIN CỬA HÀNG</div>
+        
+        <div class="adm-field">
+            <label class="adm-label">Tên Cửa Hàng *</label>
+            <input type="text" name="Name" value="@Model.Name" class="adm-input" required />
+        </div>
+
+        <div class="adm-field">
+            <label class="adm-label">Mô Tả Cửa Hàng</label>
+            <textarea name="Description" rows="3" class="adm-input">@Model.Description</textarea>
+        </div>
+
+        <div class="adm-input-2col">
+            <div class="adm-field">
+                <label class="adm-label">Số Điện Thoại</label>
+                <input type="tel" name="PhoneNumber" value="@Model.PhoneNumber" class="adm-input" />
+            </div>
+            <div class="adm-field">
+                <label class="adm-label">Email Cửa Hàng</label>
+                <input type="email" name="Email" value="@Model.Email" class="adm-input" />
+            </div>
+        </div>
+
+        <div class="adm-input-2col">
+            <div class="adm-field">
+                <label class="adm-label">Giờ Mở Cửa</label>
+                <input type="time" name="OpenTime" value="@Model.OpenTime.ToString("HH:mm")" class="adm-input" />
+            </div>
+            <div class="adm-field">
+                <label class="adm-label">Giờ Đóng Cửa</label>
+                <input type="time" name="CloseTime" value="@Model.CloseTime.ToString("HH:mm")" class="adm-input" />
+            </div>
+        </div>
+
+        <div class="adm-field">
+            <label class="adm-label">Link Google Maps</label>
+            <input type="url" name="GoogleMapsUrl" value="@Model.GoogleMapsUrl" class="adm-input" placeholder="https://maps.google.com/..." />
+        </div>
+
+        <div class="adm-form-section-title" style="margin-top:1.5rem">ĐỊA CHỈ & CHÍNH SÁCH</div>
+
+        <div class="adm-field">
+            <label class="adm-label">Địa Chỉ Nhà / Đường</label>
+            <input type="text" name="Street" value="@Model.Address?.Street" class="adm-input" />
+        </div>
+
+        <div class="adm-input-3col">
+            <div class="adm-field">
+                <label class="adm-label">Phường / Xã</label>
+                <input type="text" name="Ward" value="@Model.Address?.Ward" class="adm-input" />
+            </div>
+            <div class="adm-field">
+                <label class="adm-label">Quận / Huyện</label>
+                <input type="text" name="District" value="@Model.Address?.District" class="adm-input" />
+            </div>
+            <div class="adm-field">
+                <label class="adm-label">Tỉnh / Thành Phố</label>
+                <input type="text" name="Province" value="@Model.Address?.Province" class="adm-input" />
+            </div>
+        </div>
+
+        <div class="adm-input-2col">
+            <div class="adm-field">
+                <label class="adm-label">Chính Sách Bảo Hành</label>
+                <textarea name="WarrantyPolicy" rows="3" class="adm-input">@Model.WarrantyPolicy</textarea>
+            </div>
+            <div class="adm-field">
+                <label class="adm-label">Chính Sách Đổi Trả</label>
+                <textarea name="ReturnPolicy" rows="3" class="adm-input">@Model.ReturnPolicy</textarea>
+            </div>
+        </div>
+
+        <div style="margin-top:1.5rem">
+            <button type="submit" class="btn-adm btn-adm-primary"><i class="bi bi-check-lg"></i> Lưu Thông Tin Cửa Hàng</button>
+        </div>
+    </form>
+}
+else if (currentTab == "areas")
+{
+    <div style="display:grid;grid-template-columns:1fr 340px;gap:1.5rem">
+        <div class="adm-table-wrap">
+            <table class="adm-table">
+                <thead>
+                    <tr><th>Tỉnh / Thành</th><th>Quận / Huyện</th><th>Phường / Xã</th><th>Bán kính</th><th>Hành động</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var area in serviceAreas)
+                    {
+                        <tr>
+                            <td style="font-weight:600">@area.Province</td>
+                            <td>@(area.District ?? "—")</td>
+                            <td>@(area.Ward ?? "—")</td>
+                            <td>@(area.RadiusKm.HasValue ? $"{area.RadiusKm} km" : "—")</td>
+                            <td>
+                                <form method="post" action="/admin/stores/@Model.Id/remove-service-area/@area.Id" onsubmit="return confirm('Xóa khu vực này?')">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn-adm btn-adm-sm btn-adm-danger"><i class="bi bi-trash"></i> Xóa</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                    @if (!serviceAreas.Any())
+                    {
+                        <tr><td colspan="5" style="text-align:center;color:var(--grey-mid);padding:2rem">Chưa có khu vực phục vụ nào</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <form method="post" action="/admin/stores/@Model.Id/add-service-area" class="adm-form-section">
+            @Html.AntiForgeryToken()
+            <div class="adm-form-section-title">THÊM KHU VỰC PHỤC VỤ</div>
+            <div class="adm-field">
+                <label class="adm-label">Tỉnh / Thành *</label>
+                <input type="text" name="Province" class="adm-input" required placeholder="Ví dụ: TP. Hồ Chí Minh" />
+            </div>
+            <div class="adm-field">
+                <label class="adm-label">Quận / Huyện</label>
+                <input type="text" name="District" class="adm-input" placeholder="Ví dụ: Quận 1" />
+            </div>
+            <div class="adm-field">
+                <label class="adm-label">Phường / Xã</label>
+                <input type="text" name="Ward" class="adm-input" placeholder="Ví dụ: Phường Bến Nghé" />
+            </div>
+            <div class="adm-field">
+                <label class="adm-label">Bán kính (km)</label>
+                <input type="number" name="RadiusKm" class="adm-input" placeholder="20" />
+            </div>
+            <button type="submit" class="btn-adm btn-adm-primary w-100" style="margin-top:1rem"><i class="bi bi-plus-lg"></i> Thêm Khu Vực</button>
+        </form>
+    </div>
+}
+else if (currentTab == "techs")
+{
+    <div style="display:grid;grid-template-columns:1fr 340px;gap:1.5rem">
+        <div class="adm-table-wrap">
+            <table class="adm-table">
+                <thead>
+                    <tr><th>Họ tên</th><th>Số điện thoại</th><th>Email</th><th>Chuyên môn</th><th>Hành động</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var t in technicians)
+                    {
+                        <tr>
+                            <td style="font-weight:600">@t.Name</td>
+                            <td>@t.Phone</td>
+                            <td style="font-size:.8rem;color:var(--grey-mid)">@t.Email</td>
+                            <td><span class="badge-pill badge-grey">@t.Specialty</span></td>
+                            <td>
+                                <form method="post" action="/admin/stores/@Model.Id/delete-technician/@t.Id" onsubmit="return confirm('Xóa KTV này?')">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn-adm btn-adm-sm btn-adm-danger"><i class="bi bi-trash"></i> Xóa</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                    @if (!technicians.Any())
+                    {
+                        <tr><td colspan="5" style="text-align:center;color:var(--grey-mid);padding:2rem">Chưa có kỹ thuật viên nào</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <form method="post" action="/admin/stores/@Model.Id/add-technician" class="adm-form-section">
+            @Html.AntiForgeryToken()
+            <div class="adm-form-section-title">THÊM KỸ THUẬT VIÊN</div>
+            <div class="adm-field">
+                <label class="adm-label">Họ và tên *</label>
+                <input type="text" name="Name" class="adm-input" required placeholder="Nguyễn Văn A" />
+            </div>
+            <div class="adm-field">
+                <label class="adm-label">Số điện thoại</label>
+                <input type="tel" name="Phone" class="adm-input" placeholder="0901234567" />
+            </div>
+            <div class="adm-field">
+                <label class="adm-label">Email</label>
+                <input type="email" name="Email" class="adm-input" placeholder="ktv@gmail.com" />
+            </div>
+            <div class="adm-field">
+                <label class="adm-label">Chuyên môn</label>
+                <input type="text" name="Specialty" class="adm-input" placeholder="Điều hòa, Tủ lạnh..." />
+            </div>
+            <button type="submit" class="btn-adm btn-adm-primary w-100" style="margin-top:1rem"><i class="bi bi-plus-lg"></i> Thêm KTV</button>
+        </form>
+    </div>
+}
+else if (currentTab == "products" && products != null)
+{
+    <div class="adm-table-wrap">
+        <table class="adm-table">
+            <thead>
+                <tr><th>Sản phẩm</th><th>Thương hiệu</th><th>Giá</th><th>Tồn kho</th><th>Đã bán</th><th>Thao tác</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var p in products.Items)
+                {
+                    <tr>
+                        <td style="font-weight:600">@p.Name</td>
+                        <td>@p.Brand</td>
+                        <td style="font-weight:700;color:var(--neon)">@p.Price.ToString("N0")đ</td>
+                        <td>@p.Stock</td>
+                        <td>@p.SoldCount</td>
+                        <td>
+                            <a href="/admin/products/edit/@p.Id" class="btn-adm btn-adm-sm btn-adm-outline"><i class="bi bi-pencil"></i> Sửa</a>
+                        </td>
+                    </tr>
+                }
+                @if (!products.Items.Any())
+                {
+                    <tr><td colspan="6" style="text-align:center;color:var(--grey-mid);padding:2rem">Chưa có sản phẩm nào thuộc cửa hàng này</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else if (currentTab == "orders" && orders != null)
+{
+    <div class="adm-table-wrap">
+        <table class="adm-table">
+            <thead>
+                <tr><th>Mã đơn</th><th>Khách hàng</th><th>SĐT</th><th>Tổng tiền</th><th>Trạng thái</th><th>Thao tác</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var o in orders.Items)
+                {
+                    <tr>
+                        <td style="font-family:var(--font-mono);font-weight:700;color:var(--neon)">#@o.OrderCode</td>
+                        <td>@o.CustomerName</td>
+                        <td>@o.CustomerPhone</td>
+                        <td style="font-weight:700">@o.TotalAmount.ToString("N0")đ</td>
+                        <td><span class="badge-pill badge-grey">@o.StatusDisplay</span></td>
+                        <td>
+                            <a href="/admin/orders/@o.Id" class="btn-adm btn-adm-sm btn-adm-outline">Chi tiết</a>
+                        </td>
+                    </tr>
+                }
+                @if (!orders.Items.Any())
+                {
+                    <tr><td colspan="6" style="text-align:center;color:var(--grey-mid);padding:2rem">Chưa có đơn hàng nào</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else if (currentTab == "repairs" && repairs != null)
+{
+    <div class="adm-table-wrap">
+        <table class="adm-table">
+            <thead>
+                <tr><th>ID</th><th>Khách hàng</th><th>Thiết bị</th><th>KTV</th><th>Trạng thái</th><th>Thao tác</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var r in repairs.Items)
+                {
+                    <tr>
+                        <td style="font-family:var(--font-mono);font-weight:700;color:var(--neon)">#@r.Id</td>
+                        <td>@r.CustomerName (@r.CustomerPhone)</td>
+                        <td>@r.DeviceType - @r.Brand</td>
+                        <td>@(r.TechnicianName ?? "Chưa gán")</td>
+                        <td><span class="badge-pill badge-grey">@r.StatusDisplay</span></td>
+                        <td>
+                            <a href="/admin/repairs/@r.Id" class="btn-adm btn-adm-sm btn-adm-outline">Chi tiết / Sửa</a>
+                        </td>
+                    </tr>
+                }
+                @if (!repairs.Items.Any())
+                {
+                    <tr><td colspan="6" style="text-align:center;color:var(--grey-mid);padding:2rem">Chưa có yêu cầu sửa chữa nào</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else if (currentTab == "installations" && installations != null)
+{
+    <div class="adm-table-wrap">
+        <table class="adm-table">
+            <thead>
+                <tr><th>Mã đơn</th><th>Khách hàng</th><th>Ngày lắp</th><th>Giờ</th><th>KTV</th><th>Trạng thái</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var inst in installations.Items)
+                {
+                    <tr>
+                        <td style="font-family:var(--font-mono);font-weight:700">#@inst.OrderCode</td>
+                        <td>@inst.CustomerName (@inst.CustomerPhone)</td>
+                        <td>@inst.ScheduledDate.ToString("dd/MM/yyyy")</td>
+                        <td>@inst.ScheduledTime.ToString("HH:mm")</td>
+                        <td>@(inst.TechnicianName ?? "Chưa gán")</td>
+                        <td><span class="badge-pill badge-grey">@inst.StatusDisplay</span></td>
+                    </tr>
+                }
+                @if (!installations.Items.Any())
+                {
+                    <tr><td colspan="6" style="text-align:center;color:var(--grey-mid);padding:2rem">Chưa có lịch lắp đặt nào</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

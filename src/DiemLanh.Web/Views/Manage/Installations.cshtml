@@ -1,0 +1,134 @@
+@model DiemLanh.Application.Common.PagedResult<DiemLanh.Application.DTOs.Order.InstallationDto>
+@using DiemLanh.Domain.Enums
+@{
+    ViewData["Title"] = "Lịch lắp đặt";
+    ViewData["ActivePage"] = "Installations";
+    Layout = "_StoreLayout";
+    var filter = ViewBag.Filter as DiemLanh.Application.DTOs.Order.InstallationFilterDto ?? new();
+    var techs = ViewBag.Technicians as IEnumerable<DiemLanh.Application.Interfaces.TechnicianDto> ?? Enumerable.Empty<DiemLanh.Application.Interfaces.TechnicianDto>();
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success"><i class="bi bi-check-circle-fill me-2"></i>@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger"><i class="bi bi-exclamation-circle-fill me-2"></i>@TempData["Error"]</div>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1 fw-bold">Lịch lắp đặt</h4>
+        <p class="text-muted mb-0">Tổng @Model.TotalCount lịch</p>
+    </div>
+</div>
+
+<!-- Quick filter tabs -->
+<div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1.25rem">
+    @{
+        var instTabs = new (InstallationStatus? s, string lbl)[] {
+            (null, "Tất cả"), (InstallationStatus.Pending, "Chờ lên lịch"),
+            (InstallationStatus.Scheduled, "Đã lên lịch"), (InstallationStatus.InProgress, "Đang thực hiện"),
+            (InstallationStatus.Completed, "Hoàn thành"), (InstallationStatus.Cancelled, "Đã hủy")
+        };
+        foreach (var (st, lbl) in instTabs)
+        {
+            var active = filter.Status == st;
+            var href = st == null ? "/manage/installations" : $"/manage/installations?Status={(int)st}";
+            <a href="@href" style="padding:5px 14px;border-radius:100px;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;text-decoration:none;border:1.5px solid @(active?"var(--primary)":"var(--border)");background:@(active?"var(--primary)":"var(--surface)");color:@(active?"#fff":"var(--text-muted)")">@lbl</a>
+        }
+    }
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" action="/manage/installations">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-4">
+                    <input type="text" name="Keyword" value="@filter.Keyword" class="form-control form-control-sm" placeholder="Mã đơn, tên khách..." />
+                </div>
+                <div class="col-md-3">
+                    <input type="date" name="Date" value="@filter.Date?.ToString("yyyy-MM-dd")" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-3">
+                    @{
+                        var techFilterHtml = "<select name='TechnicianId' class='form-select form-select-sm'><option value=''>-- Tất cả KTV --</option>";
+                        foreach (var t in techs)
+                            techFilterHtml += $"<option value='{t.Id}'{(filter.TechnicianId == t.Id ? " selected" : "")}>{t.Name}</option>";
+                        techFilterHtml += "</select>";
+                    }
+                    @Html.Raw(techFilterHtml)
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary btn-sm w-100"><i class="bi bi-search me-1"></i>Lọc</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Table -->
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead style="background:var(--bg)">
+                    <tr>
+                        <th class="ps-4">Mã đơn</th>
+                        <th>Khách hàng</th>
+                        <th>SĐT</th>
+                        <th>Ngày lắp</th>
+                        <th>Giờ</th>
+                        <th>KTV phụ trách</th>
+                        <th>Trạng thái</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var inst in Model.Items)
+                    {
+                        var (bg, fg) = inst.Status switch {
+                            InstallationStatus.Pending => ("#FEF9C3","#854D0E"),
+                            InstallationStatus.Scheduled => ("#DBEAFE","#1E40AF"),
+                            InstallationStatus.InProgress => ("#EDE9FE","#5B21B6"),
+                            InstallationStatus.Completed => ("#D1FAE5","#065F46"),
+                            InstallationStatus.Cancelled => ("#FEE2E2","#991B1B"),
+                            InstallationStatus.Rescheduled => ("#FED7AA","#9A3412"),
+                            _ => ("#F3F4F6","#374151")
+                        };
+                        <tr>
+                            <td class="ps-4"><code>#@inst.OrderCode</code></td>
+                            <td class="fw-semibold">@inst.CustomerName</td>
+                            <td>@inst.CustomerPhone</td>
+                            <td>@inst.ScheduledDate.ToString("dd/MM/yyyy")</td>
+                            <td>@inst.ScheduledTime.ToString("HH:mm")</td>
+                            <td>@(inst.TechnicianName ?? "<span class='text-muted small'>Chưa phân công</span>")</td>
+                            <td><span style="background:@bg;color:@fg;padding:3px 10px;border-radius:100px;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em">@inst.StatusDisplay</span></td>
+                            <td><a href="/manage/installation-detail/@inst.Id" class="btn btn-sm btn-outline-primary">Chi tiết</a></td>
+                        </tr>
+                    }
+                    @if (!Model.Items.Any())
+                    {
+                        <tr><td colspan="8" class="text-center py-5 text-muted"><i class="bi bi-calendar-x fs-1 d-block mb-2"></i>Chưa có lịch lắp đặt nào</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@if (Model.TotalPages > 1)
+{
+    <nav class="mt-3">
+        <ul class="pagination justify-content-center">
+            @for (int p = 1; p <= Model.TotalPages; p++)
+            {
+                <li class="page-item @(p == Model.Page ? "active" : "")">
+                    <a class="page-link" href="/manage/installations?Page=@p&Status=@filter.Status">@p</a>
+                </li>
+            }
+        </ul>
+    </nav>
+}

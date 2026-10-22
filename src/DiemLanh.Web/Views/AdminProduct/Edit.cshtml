@@ -1,0 +1,213 @@
+@model DiemLanh.Application.DTOs.Admin.AdminProductCreateEditDto
+@{
+    ViewData["Title"] = "Chỉnh sửa sản phẩm";
+    ViewData["AdminTitle"] = "Chỉnh sửa sản phẩm";
+    Layout = "~/Views/Admin/_AdminLayout.cshtml";
+    var categories = ViewBag.Categories as IEnumerable<DiemLanh.Application.DTOs.Product.ProductCategoryDto> ?? Enumerable.Empty<DiemLanh.Application.DTOs.Product.ProductCategoryDto>();
+    var brands = ViewBag.Brands as IEnumerable<DiemLanh.Application.Interfaces.ProductBrandDto> ?? Enumerable.Empty<DiemLanh.Application.Interfaces.ProductBrandDto>();
+}
+
+<div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem">
+    <a href="/admin/products" class="btn-adm btn-adm-outline btn-adm-sm"><i class="bi bi-arrow-left"></i> Quay lại</a>
+    <h2 style="margin:0;font-size:1.25rem;font-weight:700;color:var(--black)">Chỉnh sửa: @Model.Name</h2>
+    <a href="/products/@Html.AntiForgeryToken()" target="_blank" class="btn-adm btn-adm-outline btn-adm-sm" style="margin-left:auto">
+        <i class="bi bi-box-arrow-up-right"></i> Xem public
+    </a>
+</div>
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div style="background:#FEF2F2;border:1px solid #FCA5A5;border-radius:8px;padding:1rem 1.25rem;margin-bottom:1rem">
+        @foreach (var err in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+        {
+            <div style="color:#B91C1C;font-size:.85rem"><i class="bi bi-exclamation-triangle me-1"></i>@err.ErrorMessage</div>
+        }
+    </div>
+}
+
+<form method="post" action="/admin/products/@Model.Id/edit">
+    @Html.AntiForgeryToken()
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:1.5rem">
+        <!-- Main Info -->
+        <div>
+            <div class="adm-form-section">
+                <div class="adm-form-section-title">Thông tin cơ bản</div>
+                <div class="adm-field">
+                    <label class="adm-label">Tên sản phẩm *</label>
+                    <input asp-for="Name" class="adm-input"/>
+                </div>
+                <div class="adm-input-2col">
+                    <div class="adm-field">
+                        <label class="adm-label">SKU *</label>
+                        <input asp-for="Sku" class="adm-input"/>
+                    </div>
+                    <div class="adm-field">
+                        <label class="adm-label">Model</label>
+                        <input asp-for="Model" class="adm-input"/>
+                    </div>
+                </div>
+                <div class="adm-input-2col">
+                    <div class="adm-field">
+                        <label class="adm-label">Thương hiệu (text)</label>
+                        <input asp-for="Brand" class="adm-input"/>
+                    </div>
+                    <div class="adm-field">
+                        <label class="adm-label">Phụ đề</label>
+                        <input asp-for="SubTitle" class="adm-input"/>
+                    </div>
+                </div>
+                <div class="adm-field">
+                    <label class="adm-label">Mô tả ngắn</label>
+                    <textarea asp-for="ShortDescription" class="adm-input" rows="2"></textarea>
+                </div>
+                <div class="adm-field">
+                    <label class="adm-label">Mô tả đầy đủ</label>
+                    <textarea asp-for="Description" class="adm-input" rows="4"></textarea>
+                </div>
+            </div>
+
+            <div class="adm-form-section">
+                <div class="adm-form-section-title">Giá & Tồn kho</div>
+                <div class="adm-input-3col">
+                    <div class="adm-field">
+                        <label class="adm-label">Giá niêm yết (VNĐ) *</label>
+                        <input asp-for="Price" class="adm-input" type="number"/>
+                    </div>
+                    <div class="adm-field">
+                        <label class="adm-label">Giá khuyến mãi</label>
+                        <input asp-for="SalePrice" class="adm-input" type="number"/>
+                    </div>
+                    <div class="adm-field">
+                        <label class="adm-label">Tồn kho</label>
+                        <input asp-for="Stock" class="adm-input" type="number"/>
+                    </div>
+                </div>
+                <div class="adm-field">
+                    <label class="adm-label">Bảo hành (tháng)</label>
+                    <input asp-for="WarrantyMonths" class="adm-input" type="number"/>
+                </div>
+            </div>
+
+            <div class="adm-form-section">
+                <div class="adm-form-section-title">Thông số kỹ thuật (Điều hòa)</div>
+                <div class="adm-input-3col">
+                    <div class="adm-field">
+                        <label class="adm-label">Công suất BTU</label>
+                        <select asp-for="CapacityBtu" class="adm-input">
+                            <option value="">-- Chọn BTU --</option>
+                            @foreach (var btu in new[] { 9000, 12000, 18000, 24000, 36000 })
+                            {
+                                <option value="@btu" selected="@(Model.CapacityBtu==btu)">@btu.ToString("N0") BTU</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="adm-field">
+                        <label class="adm-label">Loại Gas</label>
+                        <select asp-for="GasType" class="adm-input">
+                            <option value="">-- Chọn --</option>
+                            <option value="R32" selected="@(Model.GasType=="R32")">R32</option>
+                            <option value="R410A" selected="@(Model.GasType=="R410A")">R410A</option>
+                            <option value="R22" selected="@(Model.GasType=="R22")">R22</option>
+                        </select>
+                    </div>
+                    <div class="adm-field">
+                        <label class="adm-label">Diện tích phòng</label>
+                        <select asp-for="RoomAreaCode" class="adm-input">
+                            <option value="">-- Chọn --</option>
+                            <option value="UNDER_15" selected="@(Model.RoomAreaCode=="UNDER_15")">&lt; 15m²</option>
+                            <option value="FROM_15_TO_20" selected="@(Model.RoomAreaCode=="FROM_15_TO_20")">15 - 20m²</option>
+                            <option value="FROM_20_TO_30" selected="@(Model.RoomAreaCode=="FROM_20_TO_30")">20 - 30m²</option>
+                            <option value="OVER_30" selected="@(Model.RoomAreaCode=="OVER_30")">&gt; 30m²</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div>
+            <div class="adm-form-section">
+                <div class="adm-form-section-title">Phân loại</div>
+                <div class="adm-field">
+                    <label class="adm-label">Danh mục *</label>
+                    <select asp-for="CategoryId" class="adm-input">
+                        @foreach (var c in categories)
+                        {
+                            <option value="@c.Id" selected="@(Model.CategoryId==c.Id)">@c.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="adm-field">
+                    <label class="adm-label">Thương hiệu (DB)</label>
+                    <select asp-for="BrandId" class="adm-input">
+                        <option value="">-- Không chọn --</option>
+                        @foreach (var b in brands)
+                        {
+                            <option value="@b.Id" selected="@(Model.BrandId==b.Id)">@b.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="adm-field">
+                    <label class="adm-label">Cửa hàng (Store ID) *</label>
+                    <input asp-for="StoreId" class="adm-input" type="number"/>
+                </div>
+            </div>
+
+            <div class="adm-form-section">
+                <div class="adm-form-section-title">Hình ảnh & Hiển thị</div>
+                <div class="adm-field">
+                    <label class="adm-label">URL ảnh chính</label>
+                    <input asp-for="MainImageUrl" class="adm-input" id="main-img-input"/>
+                    @if (!string.IsNullOrEmpty(Model.MainImageUrl))
+                    {
+                        <img src="@Model.MainImageUrl" id="img-preview" style="margin-top:.5rem;max-width:100%;max-height:120px;border-radius:6px;object-fit:contain;background:var(--charcoal);padding:4px"/>
+                    }
+                    else
+                    {
+                        <div id="img-preview"></div>
+                    }
+                </div>
+                <div style="display:flex;flex-direction:column;gap:.6rem">
+                    <label style="display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--grey);cursor:pointer">
+                        <input asp-for="IsInverter" type="checkbox" style="accent-color:var(--neon)"/>
+                        <i class="bi bi-lightning-charge-fill" style="color:var(--neon)"></i>
+                        Công nghệ Inverter
+                    </label>
+                    <label style="display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--grey);cursor:pointer">
+                        <input asp-for="IsFeatured" type="checkbox" style="accent-color:var(--neon)"/>
+                        <i class="bi bi-star-fill" style="color:#FFC107"></i>
+                        Sản phẩm nổi bật (HOT)
+                    </label>
+                    <label style="display:flex;align-items:center;gap:8px;font-size:.85rem;color:#E11D48;cursor:pointer">
+                        <input asp-for="IsHidden" type="checkbox" style="accent-color:#E11D48"/>
+                        <i class="bi bi-eye-slash"></i>
+                        Ẩn khỏi catalog
+                    </label>
+                </div>
+            </div>
+
+            <div style="display:flex;gap:.75rem">
+                <button type="submit" class="btn-adm btn-adm-primary" style="flex:1;justify-content:center">
+                    <i class="bi bi-check-lg"></i> Lưu thay đổi
+                </button>
+                <a href="/admin/products" class="btn-adm btn-adm-outline">Hủy</a>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+<script>
+document.getElementById('main-img-input').addEventListener('input', function() {
+    const preview = document.getElementById('img-preview');
+    if (this.value) {
+        preview.innerHTML = '';
+        const img = document.createElement('img');
+        img.src = this.value;
+        img.style = 'max-width:100%;max-height:120px;border-radius:6px;object-fit:contain;background:var(--charcoal);padding:4px;margin-top:.5rem';
+        img.onerror = () => img.style.display = 'none';
+        preview.appendChild(img);
+    }
+});
+</script>
+}

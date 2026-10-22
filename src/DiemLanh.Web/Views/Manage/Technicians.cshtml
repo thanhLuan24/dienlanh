@@ -1,0 +1,124 @@
+@model IEnumerable<DiemLanh.Application.Interfaces.TechnicianDto>
+@{
+    ViewData["Title"] = "Kỹ thuật viên";
+    ViewData["ActivePage"] = "Technicians";
+    Layout = "_StoreLayout";
+}
+
+@if (TempData["Success"] != null) { <div class="alert alert-success"><i class="bi bi-check-circle-fill me-2"></i>@TempData["Success"]</div> }
+@if (TempData["Error"] != null) { <div class="alert alert-danger"><i class="bi bi-exclamation-circle-fill me-2"></i>@TempData["Error"]</div> }
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1 fw-bold">Kỹ thuật viên</h4>
+        <p class="text-muted mb-0">@Model.Count() kỹ thuật viên</p>
+    </div>
+    <button class="btn btn-primary btn-sm" data-bs-toggle="collapse" data-bs-target="#addTechForm">
+        <i class="bi bi-person-plus me-1"></i>Thêm KTV
+    </button>
+</div>
+
+<!-- Add form (collapsed by default) -->
+<div class="collapse mb-4" id="addTechForm">
+    <div class="card">
+        <div class="card-header fw-bold"><i class="bi bi-person-plus me-2"></i>Thêm kỹ thuật viên mới</div>
+        <div class="card-body">
+            <form method="post" action="/manage/addtechnician">
+                @Html.AntiForgeryToken()
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold">Họ và tên <span class="text-danger">*</span></label>
+                        <input type="text" name="Name" class="form-control form-control-sm" required placeholder="Nguyễn Văn A" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-semibold">Số điện thoại</label>
+                        <input type="tel" name="Phone" class="form-control form-control-sm" placeholder="0901234567" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-semibold">Email</label>
+                        <input type="email" name="Email" class="form-control form-control-sm" placeholder="ktv@email.com" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small fw-semibold">Chuyên môn</label>
+                        <input type="text" name="Specialty" class="form-control form-control-sm" placeholder="Điều hòa, Tủ lạnh..." />
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-success btn-sm"><i class="bi bi-check2 me-1"></i>Thêm kỹ thuật viên</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm ms-2" data-bs-toggle="collapse" data-bs-target="#addTechForm">Hủy</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Technician cards -->
+<div class="row g-3">
+    @foreach (var tech in Model)
+    {
+        <div class="col-md-6 col-xl-4">
+            <div class="card h-100" style="border:@(tech.IsActive ? "1.5px solid #D1FAE5" : "1.5px solid var(--border)")">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div style="width:52px;height:52px;border-radius:50%;background:var(--bg);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.4rem;color:var(--text-muted);flex-shrink:0">
+                            @if (!string.IsNullOrEmpty(tech.AvatarUrl))
+                            {
+                                <img src="@tech.AvatarUrl" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />
+                            }
+                            else
+                            {
+                                <i class="bi bi-person"></i>
+                            }
+                        </div>
+                        <div style="flex:1;min-width:0">
+                            <div class="fw-bold text-truncate">@tech.Name</div>
+                            @if (!string.IsNullOrEmpty(tech.Specialty))
+                            {
+                                <small class="text-muted"><i class="bi bi-wrench me-1"></i>@tech.Specialty</small>
+                            }
+                        </div>
+                        <span class="badge" style="background:@(tech.IsActive ? "#D1FAE5" : "#F3F4F6");color:@(tech.IsActive ? "#065F46" : "#374151");font-size:.65rem">
+                            @(tech.IsActive ? "Hoạt động" : "Tạm ngưng")
+                        </span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(tech.Phone))
+                    {
+                        <div class="d-flex align-items-center gap-2 mb-1" style="font-size:.85rem">
+                            <i class="bi bi-telephone text-muted"></i>
+                            <a href="tel:@tech.Phone" class="text-decoration-none">@tech.Phone</a>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(tech.Email))
+                    {
+                        <div class="d-flex align-items-center gap-2 mb-2" style="font-size:.85rem">
+                            <i class="bi bi-envelope text-muted"></i>
+                            <span class="text-truncate">@tech.Email</span>
+                        </div>
+                    }
+                    <div class="pt-2 border-top d-flex justify-content-end">
+                        <form method="post" action="/manage/technicians/@tech.Id/delete" onsubmit="return confirm('Bạn có chắc muốn xóa kỹ thuật viên này?')">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Xóa KTV">
+                                <i class="bi bi-trash me-1"></i>Xóa
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    @if (!Model.Any())
+    {
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5 text-muted">
+                    <i class="bi bi-person-x fs-1 d-block mb-2"></i>
+                    <p class="mb-2">Chưa có kỹ thuật viên nào.</p>
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="collapse" data-bs-target="#addTechForm">
+                        <i class="bi bi-person-plus me-1"></i>Thêm KTV đầu tiên
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+</div>

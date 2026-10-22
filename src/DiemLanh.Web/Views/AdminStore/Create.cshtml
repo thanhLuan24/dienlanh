@@ -1,0 +1,104 @@
+@model DiemLanh.Application.DTOs.Admin.AdminStoreCreateDto
+@{
+    ViewData["Title"] = "Thêm cửa hàng";
+    ViewData["AdminTitle"] = "Thêm cửa hàng mới";
+    Layout = "~/Views/Admin/_AdminLayout.cshtml";
+}
+
+<div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem">
+    <a href="/admin/stores" class="btn-adm btn-adm-outline btn-adm-sm"><i class="bi bi-arrow-left"></i> Quay lại</a>
+    <h2 style="margin:0;font-size:1.25rem;font-weight:700;color:var(--black)">Thêm cửa hàng mới</h2>
+</div>
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div style="background:#FEF2F2;border:1px solid #FCA5A5;border-radius:8px;padding:1rem 1.25rem;margin-bottom:1rem">
+        @foreach (var err in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+        {
+            <div style="color:#B91C1C;font-size:.85rem"><i class="bi bi-exclamation-triangle me-1"></i>@err.ErrorMessage</div>
+        }
+    </div>
+}
+
+<form method="post" action="/admin/stores/create">
+    @Html.AntiForgeryToken()
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:1.5rem">
+        <div>
+            <div class="adm-form-section">
+                <div class="adm-form-section-title">Thông tin cửa hàng</div>
+                <div class="adm-field">
+                    <label class="adm-label">Tên cửa hàng *</label>
+                    <input asp-for="Name" class="adm-input" placeholder="VD: Điện Lạnh Minh Phát"/>
+                </div>
+                <div class="adm-input-2col">
+                    <div class="adm-field">
+                        <label class="adm-label">Số điện thoại *</label>
+                        <input asp-for="PhoneNumber" class="adm-input" placeholder="0901234567"/>
+                    </div>
+                    <div class="adm-field">
+                        <label class="adm-label">Email</label>
+                        <input asp-for="Email" class="adm-input" type="email" placeholder="store@email.com"/>
+                    </div>
+                </div>
+                <div class="adm-field">
+                    <label class="adm-label">Mô tả</label>
+                    <textarea asp-for="Description" class="adm-input" rows="3" placeholder="Giới thiệu về cửa hàng..."></textarea>
+                </div>
+                <div class="adm-field">
+                    <label class="adm-label">URL Logo</label>
+                    <input asp-for="LogoUrl" class="adm-input" placeholder="/images/stores/logo.png"/>
+                </div>
+            </div>
+
+            <div class="adm-form-section">
+                <div class="adm-form-section-title">Địa chỉ</div>
+                <div class="adm-input-3col">
+                    <div class="adm-field">
+                        <label class="adm-label">Tỉnh / Thành phố</label>
+                        <input asp-for="Province" class="adm-input" placeholder="VD: Hà Nội"/>
+                    </div>
+                    <div class="adm-field">
+                        <label class="adm-label">Quận / Huyện</label>
+                        <input asp-for="District" class="adm-input" placeholder="VD: Cầu Giấy"/>
+                    </div>
+                    <div class="adm-field">
+                        <label class="adm-label">Đường / Số nhà</label>
+                        <input asp-for="Street" class="adm-input" placeholder="VD: 123 Xuân Thủy"/>
+                    </div>
+                </div>
+            </div>
+
+            <div class="adm-form-section">
+                <div class="adm-form-section-title">Chính sách</div>
+                <div class="adm-field">
+                    <label class="adm-label">Chính sách bảo hành</label>
+                    <textarea asp-for="WarrantyPolicy" class="adm-input" rows="2" placeholder="VD: Bảo hành 12 tháng chính hãng tại trung tâm..."></textarea>
+                </div>
+                <div class="adm-field">
+                    <label class="adm-label">Chính sách đổi trả</label>
+                    <textarea asp-for="ReturnPolicy" class="adm-input" rows="2" placeholder="VD: Đổi trả trong 7 ngày nếu sản phẩm lỗi..."></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <div class="adm-form-section">
+                <div class="adm-form-section-title">Chủ sở hữu</div>
+                <div class="adm-field">
+                    <label class="adm-label">User ID chủ sở hữu</label>
+                    <input asp-for="OwnerId" class="adm-input" placeholder="Nhập User ID (tùy chọn)"/>
+                    <div style="font-size:.72rem;color:var(--grey-mid);margin-top:.3rem">
+                        Để trống để tạo cửa hàng không có chủ. Xem User ID tại trang Người dùng.
+                    </div>
+                </div>
+            </div>
+
+            <div style="display:flex;gap:.75rem;margin-top:1rem">
+                <button type="submit" class="btn-adm btn-adm-primary" style="flex:1;justify-content:center">
+                    <i class="bi bi-shop"></i> Tạo cửa hàng
+                </button>
+                <a href="/admin/stores" class="btn-adm btn-adm-outline">Hủy</a>
+            </div>
+        </div>
+    </div>
+</form>

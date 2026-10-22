@@ -1,0 +1,187 @@
+@model DiemLanh.Application.DTOs.Dashboard.StoreStatisticsDto
+@{
+    ViewData["Title"] = "Thống kê doanh thu";
+    ViewData["ActivePage"] = "Statistics";
+    Layout = "_StoreLayout";
+    var year = ViewBag.Year as int? ?? DateTime.Now.Year;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1 fw-bold">Thống kê doanh thu</h4>
+        <p class="text-muted mb-0">Năm @year</p>
+    </div>
+    <form method="get" action="/manage/statistics" class="d-flex align-items-center gap-2">
+        @{
+            var yearSelectHtml = "<select name='year' class='form-select form-select-sm' style='width:auto' onchange='this.form.submit()'>";
+            for (int y = DateTime.Now.Year; y >= 2023; y--)
+                yearSelectHtml += $"<option value='{y}'{(y == year ? " selected" : "")}>{y}</option>";
+            yearSelectHtml += "</select>";
+        }
+        @Html.Raw(yearSelectHtml)
+    </form>
+</div>
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <div style="font-size:1.6rem;font-weight:800;color:var(--primary)">@Model.TotalOrders</div>
+                <div class="text-muted small">Tổng đơn hàng</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <div style="font-size:1.6rem;font-weight:800;color:#10b981">@Model.CompletedOrders</div>
+                <div class="text-muted small">Đơn hoàn thành</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <div style="font-size:1.6rem;font-weight:800;color:#ef4444">@Model.CancelledOrders</div>
+                <div class="text-muted small">Đơn đã hủy</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <div style="font-size:1.1rem;font-weight:800;color:#f59e0b">@Model.TotalRevenue.ToString("N0")đ</div>
+                <div class="text-muted small">Tổng doanh thu</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Completion rate -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between mb-1">
+            <span class="small fw-semibold">Tỷ lệ hoàn thành đơn</span>
+            <span class="small fw-bold">@Model.OrderCompletionRate.ToString("F1")%</span>
+        </div>
+        <div class="progress" style="height:8px">
+            <div class="progress-bar bg-success" style="width:@Model.OrderCompletionRate%"></div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Monthly Revenue Chart -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header fw-bold"><i class="bi bi-bar-chart me-2"></i>Doanh thu theo tháng</div>
+            <div class="card-body">
+                <canvas id="revenueChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Products -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header fw-bold"><i class="bi bi-trophy me-2"></i>Top sản phẩm bán chạy</div>
+            <div class="card-body p-0">
+                @if (Model.TopProducts.Any())
+                {
+                    <ul class="list-group list-group-flush">
+                        @foreach (var (prod, idx) in Model.TopProducts.Select((p, i) => (p, i + 1)))
+                        {
+                            <li class="list-group-item d-flex align-items-center gap-3">
+                                <span style="width:24px;height:24px;border-radius:50%;background:@(idx == 1 ? "#FCD34D" : idx == 2 ? "#D1D5DB" : idx == 3 ? "#FED7AA" : "var(--bg)");display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.75rem;flex-shrink:0">@idx</span>
+                                @if (!string.IsNullOrEmpty(prod.ImageUrl))
+                                {
+                                    <img src="@prod.ImageUrl" style="width:36px;height:36px;object-fit:contain;border-radius:6px;flex-shrink:0" />
+                                }
+                                <div style="flex:1;min-width:0">
+                                    <div class="fw-semibold text-truncate" style="font-size:.85rem">@prod.ProductName</div>
+                                    <div class="text-muted" style="font-size:.75rem">@prod.SoldCount đã bán • @prod.Revenue.ToString("N0")đ</div>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <div class="text-center py-4 text-muted small">Chưa có dữ liệu</div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Monthly table -->
+@if (Model.MonthlyRevenue.Any())
+{
+    <div class="card mt-4">
+        <div class="card-header fw-bold"><i class="bi bi-table me-2"></i>Bảng chi tiết theo tháng</div>
+        <div class="card-body p-0">
+            <table class="table table-hover align-middle mb-0">
+                <thead style="background:var(--bg)">
+                    <tr>
+                        <th class="ps-4">Tháng</th>
+                        <th class="text-center">Số đơn</th>
+                        <th class="text-end pe-4">Doanh thu</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var m in Model.MonthlyRevenue)
+                    {
+                        <tr>
+                            <td class="ps-4 fw-semibold">@m.MonthName</td>
+                            <td class="text-center">@m.OrderCount</td>
+                            <td class="text-end pe-4 fw-bold">@m.Revenue.ToString("N0")đ</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const labels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MonthlyRevenue.Select(m => m.MonthName)));
+    const revenues = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MonthlyRevenue.Select(m => m.Revenue)));
+    const orders = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MonthlyRevenue.Select(m => m.OrderCount)));
+
+    const ctx = document.getElementById('revenueChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: 'Doanh thu (đ)',
+                    data: revenues,
+                    backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                    borderRadius: 6,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Số đơn',
+                    data: orders,
+                    type: 'line',
+                    borderColor: '#10b981',
+                    backgroundColor: 'transparent',
+                    tension: 0.4,
+                    yAxisID: 'y1'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { position: 'top' } },
+            scales: {
+                y: { type: 'linear', position: 'left', ticks: { callback: v => v.toLocaleString('vi-VN') + 'đ' } },
+                y1: { type: 'linear', position: 'right', grid: { drawOnChartArea: false }, ticks: { stepSize: 1 } }
+            }
+        }
+    });
+});
+</script>

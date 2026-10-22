@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <title>@ViewData["Title"] – CoolConnect Admin</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true"/>
+    <style>
+        :root { --sidebar-w: 240px; }
+        body { margin:0; background:var(--charcoal); font-family:var(--font-main); display:flex; min-height:100vh; }
+
+        /* Sidebar */
+        .adm-sidebar { width:var(--sidebar-w); min-height:100vh; background:var(--black); display:flex; flex-direction:column; position:fixed; top:0; left:0; z-index:100; }
+        .adm-logo { padding:1.5rem 1.25rem; border-bottom:1px solid rgba(255,255,255,.07); }
+        .adm-logo a { display:flex; align-items:center; gap:10px; text-decoration:none; }
+        .adm-logo-icon { width:34px; height:34px; background:var(--neon); border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:800; color:#fff; font-size:.85rem; }
+        .adm-logo-text { font-weight:700; font-size:.95rem; color:var(--white); letter-spacing:-.02em; }
+        .adm-logo-text span { color:var(--neon); }
+        .adm-logo-badge { font-family:var(--font-mono); font-size:.6rem; background:rgba(13,148,136,.2); color:var(--neon); padding:2px 6px; border-radius:4px; margin-top:2px; display:block; letter-spacing:.08em; }
+
+        .adm-nav { flex:1; padding:1rem 0; overflow-y:auto; }
+        .adm-nav-section { padding:.5rem 1.25rem; font-family:var(--font-mono); font-size:.6rem; text-transform:uppercase; letter-spacing:.12em; color:rgba(255,255,255,.25); margin-bottom:.25rem; margin-top:1rem; }
+        .adm-nav a { display:flex; align-items:center; gap:10px; padding:10px 1.25rem; font-size:.85rem; color:rgba(255,255,255,.55); text-decoration:none; transition:all .2s; border-left:3px solid transparent; }
+        .adm-nav a:hover { background:rgba(255,255,255,.05); color:rgba(255,255,255,.9); border-left-color:rgba(13,148,136,.4); }
+        .adm-nav a.active { background:rgba(13,148,136,.12); color:var(--neon); border-left-color:var(--neon); font-weight:600; }
+        .adm-nav a i { width:18px; text-align:center; font-size:1rem; }
+
+        .adm-sidebar-footer { padding:1rem 1.25rem; border-top:1px solid rgba(255,255,255,.07); }
+        .adm-sidebar-footer a { display:flex; align-items:center; gap:8px; color:rgba(255,255,255,.4); font-size:.8rem; text-decoration:none; transition:color .2s; }
+        .adm-sidebar-footer a:hover { color:rgba(255,255,255,.8); }
+
+        /* Main */
+        .adm-main { margin-left:var(--sidebar-w); flex:1; display:flex; flex-direction:column; min-height:100vh; }
+        .adm-topbar { background:var(--white); border-bottom:1px solid var(--grey-dark); padding:.75rem 2rem; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:50; }
+        .adm-topbar-title { font-weight:700; font-size:1rem; color:var(--black); }
+        .adm-topbar-actions { display:flex; align-items:center; gap:1rem; }
+        .adm-user { display:flex; align-items:center; gap:8px; }
+        .adm-avatar { width:32px; height:32px; background:var(--neon); border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:.8rem; color:#fff; }
+        .adm-content { flex:1; padding:2rem; }
+
+        /* Toast */
+        .adm-toast { position:fixed; top:1.5rem; right:1.5rem; z-index:9999; display:flex; flex-direction:column; gap:.5rem; }
+        .toast-item { padding:.75rem 1.25rem; border-radius:8px; font-size:.85rem; font-weight:600; animation:slideInRight .3s ease; display:flex; align-items:center; gap:8px; box-shadow:0 4px 20px rgba(0,0,0,.12); }
+        .toast-success { background:#D1FAE5; color:#065F46; border:1px solid #A7F3D0; }
+        .toast-error { background:#FEE2E2; color:#991B1B; border:1px solid #FCA5A5; }
+        @@keyframes slideInRight { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
+
+        /* Cards */
+        .adm-kpi-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:1rem; margin-bottom:2rem; }
+        .adm-kpi { background:var(--white); border:1px solid var(--grey-dark); border-radius:var(--radius-md); padding:1.25rem 1.5rem; }
+        .adm-kpi-label { font-family:var(--font-mono); font-size:.65rem; text-transform:uppercase; letter-spacing:.1em; color:var(--grey-mid); margin-bottom:.5rem; }
+        .adm-kpi-value { font-size:1.8rem; font-weight:800; color:var(--black); letter-spacing:-.03em; }
+        .adm-kpi-sub { font-size:.75rem; color:var(--grey-mid); margin-top:.25rem; }
+        .adm-kpi-icon { float:right; font-size:1.5rem; color:var(--neon); opacity:.5; }
+
+        /* Table */
+        .adm-table-wrap { background:var(--white); border:1px solid var(--grey-dark); border-radius:var(--radius-md); overflow:hidden; }
+        .adm-table { width:100%; border-collapse:collapse; font-size:.85rem; }
+        .adm-table th { background:var(--charcoal); font-family:var(--font-mono); font-size:.65rem; text-transform:uppercase; letter-spacing:.08em; color:var(--grey); padding:.75rem 1rem; text-align:left; border-bottom:1px solid var(--grey-dark); }
+        .adm-table td { padding:.75rem 1rem; border-bottom:1px solid var(--grey-dark); color:var(--black); vertical-align:middle; }
+        .adm-table tr:last-child td { border-bottom:none; }
+        .adm-table tr:hover td { background:var(--charcoal); }
+        .adm-img-thumb { width:44px; height:44px; border-radius:6px; object-fit:contain; background:var(--charcoal); }
+
+        /* Badges */
+        .badge-pill { display:inline-flex; align-items:center; padding:3px 10px; border-radius:100px; font-family:var(--font-mono); font-size:.65rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; }
+        .badge-success { background:#D1FAE5; color:#065F46; }
+        .badge-warning { background:#FEF3C7; color:#92400E; }
+        .badge-danger  { background:#FEE2E2; color:#991B1B; }
+        .badge-info    { background:#DBEAFE; color:#1E40AF; }
+        .badge-grey    { background:var(--charcoal); color:var(--grey-mid); }
+
+        /* Buttons */
+        .btn-adm { display:inline-flex; align-items:center; gap:6px; padding:7px 14px; border-radius:6px; font-family:var(--font-main); font-size:.8rem; font-weight:600; cursor:pointer; border:none; text-decoration:none; transition:all .2s; }
+        .btn-adm-primary { background:var(--neon); color:#fff; }
+        .btn-adm-primary:hover { background:#0b8177; }
+        .btn-adm-outline { background:transparent; color:var(--grey); border:1px solid var(--grey-dark); }
+        .btn-adm-outline:hover { border-color:var(--neon); color:var(--neon); }
+        .btn-adm-danger { background:#FEE2E2; color:#991B1B; border:1px solid #FCA5A5; }
+        .btn-adm-danger:hover { background:#FCA5A5; }
+        .btn-adm-sm { padding:4px 10px; font-size:.75rem; }
+
+        /* Form */
+        .adm-form-section { background:var(--white); border:1px solid var(--grey-dark); border-radius:var(--radius-md); padding:1.5rem; margin-bottom:1.5rem; }
+        .adm-form-section-title { font-family:var(--font-mono); font-size:.7rem; text-transform:uppercase; letter-spacing:.1em; color:var(--neon); margin-bottom:1.25rem; padding-bottom:.75rem; border-bottom:1px solid var(--grey-dark); }
+        .adm-field { margin-bottom:1rem; }
+        .adm-label { display:block; font-family:var(--font-mono); font-size:.65rem; text-transform:uppercase; letter-spacing:.1em; color:var(--grey); margin-bottom:.4rem; }
+        .adm-input { width:100%; background:var(--charcoal); border:1px solid var(--grey-dark); color:var(--black); padding:9px 12px; border-radius:6px; font-family:var(--font-main); font-size:.875rem; outline:none; box-sizing:border-box; transition:border-color .2s; }
+        .adm-input:focus { border-color:var(--neon); box-shadow:0 0 0 3px rgba(13,148,136,.1); }
+        .adm-input-2col { display:grid; grid-template-columns:1fr 1fr; gap:.75rem; }
+        .adm-input-3col { display:grid; grid-template-columns:1fr 1fr 1fr; gap:.75rem; }
+
+        /* Filter bar */
+        .adm-filter-bar { background:var(--white); border:1px solid var(--grey-dark); border-radius:var(--radius-md); padding:1rem 1.25rem; margin-bottom:1.25rem; display:flex; align-items:center; gap:1rem; flex-wrap:wrap; }
+        .adm-search { flex:1; min-width:200px; position:relative; }
+        .adm-search input { width:100%; box-sizing:border-box; background:var(--charcoal); border:1px solid var(--grey-dark); color:var(--black); padding:8px 12px 8px 36px; border-radius:6px; font-size:.85rem; font-family:var(--font-main); outline:none; }
+        .adm-search input:focus { border-color:var(--neon); }
+        .adm-search .bi { position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--grey-mid); }
+
+        /* Pagination */
+        .adm-pagination { display:flex; justify-content:center; gap:6px; margin-top:1.5rem; }
+        .adm-pagination a, .adm-pagination span { padding:6px 12px; border-radius:6px; font-size:.8rem; border:1px solid var(--grey-dark); text-decoration:none; color:var(--grey); }
+        .adm-pagination a:hover { border-color:var(--neon); color:var(--neon); }
+        .adm-pagination .active { background:var(--neon); color:#fff; border-color:var(--neon); }
+
+        @@media(max-width:900px) { .adm-sidebar { width:60px; } .adm-logo-text,.adm-logo-badge,.adm-nav-section,.adm-nav a span { display:none; } .adm-main { margin-left:60px; } .adm-logo { padding:.75rem; } .adm-nav a { padding:12px; justify-content:center; } }
+    </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="adm-sidebar">
+    <div class="adm-logo">
+        <a href="/admin">
+            <div class="adm-logo-icon">CC</div>
+            <div>
+                <div class="adm-logo-text">Cool<span>Connect</span></div>
+                <span class="adm-logo-badge">ADMIN PANEL</span>
+            </div>
+        </a>
+    </div>
+
+    <nav class="adm-nav">
+        <div class="adm-nav-section">Tổng quan</div>
+        <a href="/admin" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Admin" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")">
+            <i class="bi bi-grid-1x2"></i> <span>Dashboard</span>
+        </a>
+
+        <div class="adm-nav-section">Quản lý</div>
+        <a href="/admin/products" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "AdminProduct" ? "active" : "")">
+            <i class="bi bi-box-seam"></i> <span>Sản phẩm</span>
+        </a>
+        <a href="/admin/stores" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "AdminStore" ? "active" : "")">
+            <i class="bi bi-shop"></i> <span>Cửa hàng</span>
+        </a>
+        <a href="/admin/orders" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Admin" && (ViewContext.RouteData.Values["action"]?.ToString() == "Orders" || ViewContext.RouteData.Values["action"]?.ToString() == "OrderDetail") ? "active" : "")">
+            <i class="bi bi-receipt"></i> <span>Đơn hàng</span>
+        </a>
+        <a href="/admin/installations" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Installations" ? "active" : "")">
+            <i class="bi bi-tools"></i> <span>Lịch lắp đặt</span>
+        </a>
+        <a href="/admin/repairs" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Repairs" || ViewContext.RouteData.Values["action"]?.ToString() == "RepairDetail" ? "active" : "")">
+            <i class="bi bi-wrench-adjustable"></i> <span>Sửa chữa</span>
+        </a>
+        <a href="/admin/service-areas" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "ServiceAreas" ? "active" : "")">
+            <i class="bi bi-geo-alt"></i> <span>Khu vực phục vụ</span>
+        </a>
+        <a href="/admin/technicians" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Technicians" ? "active" : "")">
+            <i class="bi bi-person-gear"></i> <span>Kỹ thuật viên</span>
+        </a>
+        <a href="/admin/users" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Admin" && ViewContext.RouteData.Values["action"]?.ToString() == "Users" ? "active" : "")">
+            <i class="bi bi-people"></i> <span>Người dùng</span>
+        </a>
+
+        <div class="adm-nav-section">Hệ thống</div>
+        <a href="/products" target="_blank">
+            <i class="bi bi-box-arrow-up-right"></i> <span>Xem trang public</span>
+        </a>
+    </nav>
+
+    <div class="adm-sidebar-footer">
+        <form method="post" action="/auth/logout">
+            @Html.AntiForgeryToken()
+            <button type="submit" style="background:none;border:none;padding:0;width:100%;cursor:pointer;">
+                <a style="pointer-events:none"><i class="bi bi-box-arrow-left"></i> <span>Đăng xuất</span></a>
+            </button>
+        </form>
+    </div>
+</aside>
+
+<!-- Main -->
+<div class="adm-main">
+    <!-- Topbar -->
+    <div class="adm-topbar">
+        <div class="adm-topbar-title">@(ViewData["AdminTitle"] ?? ViewData["Title"])</div>
+        <div class="adm-topbar-actions">
+            <div class="adm-user">
+                <div class="adm-avatar">@(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")</div>
+                <span style="font-size:.85rem;color:var(--grey)">@User.Identity?.Name</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast notifications -->
+    <div class="adm-toast" id="adm-toast">
+        @if (TempData["Success"] != null)
+        {
+            <div class="toast-item toast-success"><i class="bi bi-check-circle-fill"></i> @TempData["Success"]</div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="toast-item toast-error"><i class="bi bi-x-circle-fill"></i> @TempData["Error"]</div>
+        }
+    </div>
+
+    <!-- Content -->
+    <div class="adm-content">
+        @RenderBody()
+    </div>
+</div>
+
+@RenderSection("Scripts", required: false)
+<script>
+// Auto-dismiss toasts
+setTimeout(() => {
+    document.querySelectorAll('.toast-item').forEach(el => {
+        el.style.transition = 'opacity .5s';
+        el.style.opacity = '0';
+        setTimeout(() => el.remove(), 500);
+    });
+}, 3500);
+</script>
+</body>
+</html>

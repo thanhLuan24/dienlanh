@@ -1,0 +1,134 @@
+@model DiemLanh.Application.DTOs.Product.ProductCompareDto
+@{
+    ViewData["Title"] = "So sánh sản phẩm | CoolConnect";
+}
+
+@section Head {
+<meta name="description" content="So sánh thông số kỹ thuật, giá thành, công nghệ Inverter và bảo hành giữa các mẫu thiết bị điện lạnh trực quan trên CoolConnect.">
+}
+
+<div style="background:var(--white);min-height:100vh;padding-top:20px;padding-bottom:100px;">
+    <!-- Breadcrumb -->
+    <div class="container">
+        <div style="display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:.75rem;color:var(--grey-mid);margin-bottom:1.5rem">
+            <a href="/" style="color:var(--grey-mid)">Trang chủ</a>
+            <i class="bi bi-chevron-right" style="font-size:.65rem"></i>
+            <a href="/products" style="color:var(--grey-mid)">Sản phẩm</a>
+            <i class="bi bi-chevron-right" style="font-size:.65rem"></i>
+            <span style="color:var(--neon)">So sánh sản phẩm</span>
+        </div>
+
+        <div style="margin-bottom:2.5rem">
+            <div class="section-eyebrow"><span class="label-mono">Product Comparison</span></div>
+            <h1 class="display-lg">Ma trận <span class="text-neon">So Sánh</span></h1>
+            <p style="color:var(--grey-mid);font-size:.9rem;margin-top:.5rem">
+                Đặt các mẫu sản phẩm cạnh nhau để so sánh trực quan về giá bán, công nghệ, công suất làm lạnh và chế độ bảo hành.
+            </p>
+        </div>
+    </div>
+
+    <div class="container">
+        @if (Model.Products == null || !Model.Products.Any())
+        {
+            <div style="background:var(--charcoal);border:1px dashed var(--grey-dark);border-radius:var(--radius-lg);padding:5rem 2rem;text-align:center">
+                <i class="bi bi-arrow-left-right" style="font-size:3.5rem;color:var(--grey-mid);display:block;margin-bottom:1rem"></i>
+                <h4 style="font-weight:700;color:var(--black);margin-bottom:.5rem">Chưa chọn sản phẩm nào để so sánh</h4>
+                <p style="color:var(--grey-mid);font-size:.9rem;margin-bottom:1.5rem">Quay lại danh mục sản phẩm và tích chọn các sản phẩm bạn muốn đặt lên bàn cân.</p>
+                <a href="/products" class="btn btn-neon">Duyệt sản phẩm ngay</a>
+            </div>
+        }
+        else
+        {
+            <div style="background:var(--white);border:1px solid var(--grey-dark);border-radius:var(--radius-lg);overflow-x:auto">
+                <table style="width:100%;border-collapse:collapse;min-width:700px">
+                    <!-- Products Cards Header Row -->
+                    <thead>
+                        <tr style="border-bottom:2px solid var(--grey-dark)">
+                            <th style="padding:1.5rem;width:200px;background:var(--charcoal);color:var(--neon);font-family:var(--font-mono);font-size:.8rem;text-transform:uppercase">
+                                Tiêu chí so sánh
+                            </th>
+                            @foreach (var p in Model.Products)
+                            {
+                                <th style="padding:1.5rem;width:250px;text-align:center;background:var(--white)">
+                                    <div style="position:relative">
+                                        <button onclick="removeCompareAndReload(@p.Id)" title="Xóa khỏi so sánh" 
+                                                style="position:absolute;top:-10px;right:-10px;background:none;border:none;color:var(--grey-mid);font-size:1.1rem;cursor:pointer">
+                                            <i class="bi bi-x-circle"></i>
+                                        </button>
+                                        <div style="height:120px;display:flex;align-items:center;justify-content:center;background:var(--charcoal);border-radius:6px;padding:8px;margin-bottom:1rem;border:1px solid var(--grey-dark)">
+                                            @if (!string.IsNullOrEmpty(p.MainImageUrl))
+                                            {
+                                                <img src="@p.MainImageUrl" alt="@p.Name" style="max-height:100%;object-fit:contain" />
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-wind" style="font-size:3rem;color:var(--grey-mid)"></i>
+                                            }
+                                        </div>
+                                        <a href="/products/@p.Slug" style="font-size:.875rem;font-weight:700;color:var(--black);text-decoration:none;display:block;margin-bottom:.5rem;line-height:1.3">
+                                            @p.Name
+                                        </a>
+                                        <div style="font-size:1.25rem;font-weight:800;color:var(--neon);margin-bottom:.75rem">
+                                            @((p.SalePrice ?? p.Price).ToString("N0"))đ
+                                        </div>
+                                        <a href="/products/@p.Slug" class="btn btn-neon" style="padding:6px 12px;font-size:.75rem;width:100%;justify-content:center">
+                                            Xem chi tiết
+                                        </a>
+                                    </div>
+                                </th>
+                            }
+                        </tr>
+                    </thead>
+
+                    <!-- Dynamic Specification Matrix Rows -->
+                    <tbody>
+                        @foreach (var key in Model.SpecKeys)
+                        {
+                            <tr style="border-bottom:1px solid var(--grey-dark)">
+                                <td style="padding:1rem 1.5rem;background:var(--charcoal);color:var(--black);font-weight:600;font-size:.85rem">
+                                    @key
+                                </td>
+                                @foreach (var p in Model.Products)
+                                {
+                                    var val = Model.SpecMatrix.ContainsKey(key) && Model.SpecMatrix[key].ContainsKey(p.Id) 
+                                        ? Model.SpecMatrix[key][p.Id] 
+                                        : "--";
+                                    <td style="padding:1rem 1.5rem;text-align:center;color:var(--black);font-size:.875rem">
+                                        @if (val.Contains("Có (Inverter"))
+                                        {
+                                            <span style="color:var(--neon);font-weight:700"><i class="bi bi-check-circle-fill me-1"></i>Có</span>
+                                        }
+                                        else
+                                        {
+                                            @val
+                                        }
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="margin-top:2rem;display:flex;justify-content:space-between">
+                <a href="/products" class="btn btn-outline"><i class="bi bi-arrow-left me-1"></i>Thêm sản phẩm so sánh</a>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+<script>
+function removeCompareAndReload(pid) {
+    const url = new URL(window.location.href);
+    const ids = url.searchParams.get('ids') || '';
+    const newIds = ids.split(',').filter(x => x.trim() !== pid.toString()).join(',');
+    if (newIds) {
+        url.searchParams.set('ids', newIds);
+        window.location.href = url.toString();
+    } else {
+        window.location.href = '/products';
+    }
+}
+</script>
+}

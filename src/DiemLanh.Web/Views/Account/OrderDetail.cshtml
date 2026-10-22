@@ -1,0 +1,315 @@
+@model DiemLanh.Application.DTOs.Order.CustomerOrderSummaryDto
+@using DiemLanh.Domain.Enums
+@using System.Text.Encodings.Web
+@{
+    ViewData["Title"] = $"Chi Tiết Đơn Hàng #{Model.OrderCode}";
+    var isCompleted = Model.Status == OrderStatus.Completed;
+    var isCancelled = Model.Status == OrderStatus.Cancelled || Model.Status == OrderStatus.Rejected;
+
+    // Status step indices (0 to 3)
+    int currentStep = Model.Status switch
+    {
+        OrderStatus.PendingConfirmation => 0,
+        OrderStatus.Confirmed => 1,
+        OrderStatus.Preparing => 1,
+        OrderStatus.Shipping => 2,
+        OrderStatus.Delivered => 2,
+        OrderStatus.Installed => 2,
+        OrderStatus.Completed => 3,
+        _ => 0
+    };
+}
+
+<style>
+.detail-wrap { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+
+.status-tracker { display: flex; justify-content: space-between; position: relative; margin: 2rem 0; padding: 0 1rem; }
+.status-tracker::before { content: ''; position: absolute; top: 18px; left: 2.5rem; right: 2.5rem; height: 4px; background: var(--grey-dark); z-index: 1; }
+.status-step { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; text-align: center; width: 25%; }
+.step-icon { width: 40px; height: 40px; border-radius: 50%; background: var(--white); border: 3px solid var(--grey-dark); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color: var(--grey-mid); margin-bottom: .5rem; transition: all .3s; }
+.step-title { font-size: .8rem; font-weight: 700; color: var(--grey-mid); font-family: var(--font-mono); }
+.status-step.active .step-icon { background: var(--neon); border-color: var(--neon); color: var(--white); box-shadow: 0 0 16px rgba(13, 148, 136, 0.4); }
+.status-step.active .step-title { color: var(--black); }
+
+.detail-card { background: var(--white); border: 1px solid var(--grey-dark); border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,.03); }
+.detail-card-title { font-size: .9rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--grey); margin-bottom: 1rem; border-bottom: 1px solid var(--grey-dark); padding-bottom: .5rem; font-family: var(--font-mono); }
+
+.item-row { display: flex; align-items: center; gap: 1.25rem; padding: 1rem 0; border-bottom: 1px dashed var(--grey-dark); }
+.item-row:last-child { border-bottom: none; }
+.item-thumb { width: 80px; height: 80px; object-fit: contain; border-radius: 8px; background: var(--charcoal); border: 1px solid var(--grey-dark); padding: 4px; flex-shrink: 0; }
+
+.price-row { display: flex; justify-content: space-between; font-size: .9rem; padding: .4rem 0; color: var(--grey); }
+.price-total { display: flex; justify-content: space-between; font-size: 1.3rem; font-weight: 800; color: var(--neon); padding-top: .75rem; border-top: 2px solid var(--grey-dark); margin-top: .5rem; }
+
+/* Modal Rating */
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 9999; padding: 1rem; }
+.modal-card { background: var(--white); border-radius: var(--radius-lg); max-width: 540px; width: 100%; padding: 1.75rem; box-shadow: 0 20px 40px rgba(0,0,0,0.2); position: relative; }
+.star-rating { display: flex; gap: .5rem; font-size: 2rem; color: #D1D5DB; cursor: pointer; margin-bottom: 1rem; }
+.star-rating .bi-star-fill.active { color: #F59E0B; }
+</style>
+
+<div class="detail-wrap">
+    <!-- Back Link -->
+    <a href="/auth/orders?tab=@(isCompleted ? "completed" : "active")" style="color:var(--grey-mid);text-decoration:none;font-size:.85rem;font-weight:600;display:inline-flex;align-items:center;gap:.35rem;margin-bottom:1rem">
+        <i class="bi bi-arrow-left"></i> Quay lại Đơn hàng của tôi
+    </a>
+
+    <!-- Header Card -->
+    <div class="detail-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem">
+            <div>
+                <span class="label-mono">Mã đơn hàng:</span>
+                <h2 style="font-size:1.6rem;font-weight:800;color:var(--neon);margin:0">#@Model.OrderCode</h2>
+                <div style="font-size:.82rem;color:var(--grey-mid);margin-top:.2rem">
+                    Đặt lúc: @Model.CreatedAt.AddHours(7).ToString("dd/MM/yyyy HH:mm") • Cửa hàng: <strong>@Model.StoreName</strong>
+                </div>
+            </div>
+            <div>
+                <span class="badge bg-dark text-white p-2 px-3" style="font-size:.85rem;font-family:var(--font-mono)">
+                    @Model.StatusDisplay
+                </span>
+            </div>
+        </div>
+
+        <!-- Status Progress Tracker -->
+        @if (!isCancelled)
+        {
+            <div class="status-tracker">
+                <div class="status-step @(currentStep >= 0 ? "active" : "")">
+                    <div class="step-icon"><i class="bi bi-receipt"></i></div>
+                    <div class="step-title">Chờ xác nhận</div>
+                </div>
+                <div class="status-step @(currentStep >= 1 ? "active" : "")">
+                    <div class="step-icon"><i class="bi bi-box-seam"></i></div>
+                    <div class="step-title">Đã xác nhận & Chuẩn bị</div>
+                </div>
+                <div class="status-step @(currentStep >= 2 ? "active" : "")">
+                    <div class="step-icon"><i class="bi bi-truck"></i></div>
+                    <div class="step-title">Đang giao & Lắp đặt</div>
+                </div>
+                <div class="status-step @(currentStep >= 3 ? "active" : "")">
+                    <div class="step-icon"><i class="bi bi-check-circle-fill"></i></div>
+                    <div class="step-title">Hoàn thành</div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-danger mt-3 mb-0" style="border-radius:10px">
+                <i class="bi bi-x-circle-fill me-2"></i>Đơn hàng này đã bị <strong>@Model.StatusDisplay</strong>.
+            </div>
+        }
+    </div>
+
+    <!-- Receiver & Shipping Info -->
+    <div class="detail-card">
+        <div class="detail-card-title"><i class="bi bi-geo-alt me-1"></i>Thông Tin Giao Hàng & Người Nhận</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
+            <div>
+                <div style="font-size:.82rem;color:var(--grey-mid)">Người nhận:</div>
+                <div style="font-weight:700;font-size:1rem;color:var(--black)">@Model.CustomerName</div>
+                <div style="font-size:.85rem;color:var(--grey)"><i class="bi bi-telephone me-1"></i>@Model.CustomerPhone</div>
+                @if (!string.IsNullOrEmpty(Model.CustomerEmail))
+                {
+                    <div style="font-size:.82rem;color:var(--grey-mid)"><i class="bi bi-envelope me-1"></i>@Model.CustomerEmail</div>
+                }
+            </div>
+            <div>
+                <div style="font-size:.82rem;color:var(--grey-mid)">Địa chỉ nhận hàng:</div>
+                <div style="font-weight:600;font-size:.9rem;color:var(--black)">@Model.ShippingAddress</div>
+                @if (!string.IsNullOrEmpty(Model.Note))
+                {
+                    <div style="font-size:.82rem;color:var(--grey-mid);margin-top:.4rem">
+                        Ghi chú: <em>"@Model.Note"</em>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Products List Card -->
+    <div class="detail-card">
+        <div class="detail-card-title"><i class="bi bi-box me-1"></i>Danh Sách Sản Phẩm Muốn Mua (@Model.Items.Count)</div>
+
+        @foreach (var item in Model.Items)
+        {
+            <div class="item-row">
+                @if (!string.IsNullOrEmpty(item.ProductImageUrl))
+                {
+                    <img src="@item.ProductImageUrl" alt="@item.ProductName" class="item-thumb" />
+                }
+                else
+                {
+                    <div class="item-thumb" style="display:flex;align-items:center;justify-content:center;color:var(--grey-mid);font-size:1.8rem"><i class="bi bi-box"></i></div>
+                }
+                <div style="flex:1">
+                    @if (!string.IsNullOrEmpty(item.ProductSlug))
+                    {
+                        <a href="/products/@item.ProductSlug" style="font-weight:700;font-size:1rem;color:var(--black);text-decoration:none;display:inline-block;margin-bottom:.25rem" title="Xem chi tiết và thông số kỹ thuật sản phẩm">
+                            @item.ProductName <i class="bi bi-box-arrow-up-right ms-1" style="font-size:.8rem;color:var(--neon)"></i>
+                        </a>
+                        <div style="margin-bottom:.4rem">
+                            <a href="/products/@item.ProductSlug" class="btn btn-sm btn-outline-secondary" style="font-size:.75rem;padding:2px 8px;border-radius:4px">
+                                <i class="bi bi-info-circle me-1"></i>Xem thông số kỹ thuật
+                            </a>
+                        </div>
+                    }
+                    else
+                    {
+                        <div style="font-weight:700;font-size:1rem;color:var(--black)">@item.ProductName</div>
+                    }
+
+                    <div style="font-size:.85rem;color:var(--grey-mid)">
+                        Đơn giá: <strong style="color:var(--black)">@item.UnitPrice.ToString("N0")đ</strong> • Số lượng: <strong>x@item.Quantity</strong>
+                        @if (item.WarrantyMonths.HasValue && item.WarrantyMonths > 0)
+                        {
+                            <span class="ms-2 badge bg-light text-dark border"><i class="bi bi-shield-check text-success me-1"></i>Bảo hành @item.WarrantyMonths tháng</span>
+                        }
+                    </div>
+                </div>
+
+                <div style="text-align:right">
+                    <div style="font-size:1.1rem;font-weight:800;color:var(--neon)">@item.TotalPrice.ToString("N0")đ</div>
+                    @if (isCompleted && item.ProductId.HasValue)
+                    {
+                        <button type="button" class="btn btn-sm btn-outline-warning mt-2" style="font-size:.8rem;font-weight:600"
+                                onclick="openReviewModal(@item.ProductId.Value, '@JavaScriptEncoder.Default.Encode(item.ProductName)')">
+                            <i class="bi bi-star-fill me-1"></i>Đánh giá
+                        </button>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Price Summary Card -->
+    <div class="detail-card">
+        <div class="detail-card-title"><i class="bi bi-credit-card me-1"></i>Chi Tiết Thanh Toán (Giá Phải Trả)</div>
+
+        <div class="price-row">
+            <span>Tổng giá sản phẩm (@Model.Items.Sum(i => i.Quantity) món):</span>
+            <strong>@Model.Items.Sum(i => i.TotalPrice).ToString("N0")đ</strong>
+        </div>
+        <div class="price-row">
+            <span>Phí vận chuyển & Lắp đặt:</span>
+            <strong class="text-success">MIỄN PHÍ</strong>
+        </div>
+        <div class="price-total">
+            <span>TỔNG CỘNG THA NH TOÁN:</span>
+            <span>@Model.TotalAmount.ToString("N0")đ</span>
+        </div>
+    </div>
+</div>
+
+<!-- Review Modal -->
+<div id="reviewModal" class="modal-overlay">
+    <div class="modal-card">
+        <button type="button" onclick="closeReviewModal()" style="position:absolute;top:1rem;right:1rem;background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--grey-mid)">&times;</button>
+        <h4 style="font-weight:800;text-transform:uppercase;margin-bottom:.25rem">Đánh Giá Sản Phẩm</h4>
+        <p id="reviewProductName" style="font-size:.85rem;color:var(--grey-mid);margin-bottom:1.25rem;font-weight:600"></p>
+
+        <form id="reviewForm" onsubmit="submitReview(event)">
+            @Html.AntiForgeryToken()
+            <input type="hidden" id="reviewProductId" name="ProductId" value="" />
+            <input type="hidden" id="reviewRatingInput" name="Rating" value="5" />
+
+            <div style="margin-bottom:1rem;text-align:center">
+                <label style="font-size:.85rem;font-weight:700;display:block;margin-bottom:.5rem">Chọn mức độ hài lòng</label>
+                <div class="star-rating" style="justify-content:center">
+                    <i class="bi bi-star-fill active" onclick="setRating(1)"></i>
+                    <i class="bi bi-star-fill active" onclick="setRating(2)"></i>
+                    <i class="bi bi-star-fill active" onclick="setRating(3)"></i>
+                    <i class="bi bi-star-fill active" onclick="setRating(4)"></i>
+                    <i class="bi bi-star-fill active" onclick="setRating(5)"></i>
+                </div>
+                <div id="ratingText" style="font-size:.8rem;font-weight:700;color:#F59E0B">Tuyệt vời (5/5 sao)</div>
+            </div>
+
+            <div style="margin-bottom:1rem">
+                <label style="font-size:.8rem;font-weight:700;margin-bottom:.25rem;display:block">Tiêu đề đánh giá *</label>
+                <input type="text" name="Title" class="form-control" placeholder="Ví dụ: Sản phẩm dùng rất êm, giao hàng nhanh" required style="border-radius:8px" />
+            </div>
+
+            <div style="margin-bottom:1.25rem">
+                <label style="font-size:.8rem;font-weight:700;margin-bottom:.25rem;display:block">Nội dung nhận xét *</label>
+                <textarea name="Comment" rows="3" class="form-control" placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm..." required style="border-radius:8px"></textarea>
+            </div>
+
+            <div style="display:flex;gap:.75rem;justify-content:flex-end">
+                <button type="button" onclick="closeReviewModal()" class="btn btn-outline" style="border-radius:8px">Hủy</button>
+                <button type="submit" id="btnSubmitReview" class="btn btn-neon" style="border-radius:8px">Gửi Đánh Giá</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let currentRating = 5;
+const ratingLabels = { 1: "Rất tệ (1/5)", 2: "Không hài lòng (2/5)", 3: "Bình thường (3/5)", 4: "Hài lòng (4/5)", 5: "Tuyệt vời (5/5 sao)" };
+
+function setRating(val) {
+    currentRating = val;
+    document.getElementById('reviewRatingInput').value = val;
+    document.getElementById('ratingText').innerText = ratingLabels[val];
+    const stars = document.querySelectorAll('.star-rating i');
+    stars.forEach((star, idx) => {
+        if (idx < val) star.classList.add('active');
+        else star.classList.remove('active');
+    });
+}
+
+function openReviewModal(productId, productName) {
+    document.getElementById('reviewProductId').value = productId;
+    document.getElementById('reviewProductName').innerText = productName;
+    setRating(5);
+    document.getElementById('reviewModal').style.display = 'flex';
+}
+
+function closeReviewModal() {
+    document.getElementById('reviewModal').style.display = 'none';
+    document.getElementById('reviewForm').reset();
+}
+
+async function submitReview(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnSubmitReview');
+    btn.disabled = true;
+    btn.innerText = "Đang gửi...";
+
+    const productId = parseInt(document.getElementById('reviewProductId').value);
+    const rating = parseInt(document.getElementById('reviewRatingInput').value);
+    const title = e.target.Title.value;
+    const comment = e.target.Comment.value;
+
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+    try {
+        const res = await fetch('/products/reviews', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': token
+            },
+            body: JSON.stringify({
+                productId: productId,
+                rating: rating,
+                title: title,
+                comment: comment
+            })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+            alert('Cảm ơn bạn đã gửi đánh giá cho sản phẩm!');
+            closeReviewModal();
+        } else {
+            alert(data.message || 'Có lỗi xảy ra khi gửi đánh giá.');
+        }
+    } catch (err) {
+        alert('Lỗi kết nối máy chủ.');
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "Gửi Đánh Giá";
+    }
+}
+</script>

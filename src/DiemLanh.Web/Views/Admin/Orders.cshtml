@@ -1,0 +1,122 @@
+@model DiemLanh.Application.Common.PagedResult<DiemLanh.Application.DTOs.Order.OrderListDto>
+@{
+    ViewData["Title"] = "Quản lý Đơn hàng";
+    ViewData["AdminTitle"] = "Quản lý Đơn hàng";
+    Layout = "~/Views/Admin/_AdminLayout.cshtml";
+    var filter = ViewBag.Filter as DiemLanh.Application.DTOs.Order.OrderFilterDto ?? new();
+}
+
+<!-- Filter Bar -->
+<div class="adm-filter-bar">
+    <form method="get" action="/admin/orders" style="display:contents">
+        <div class="adm-search">
+            <i class="bi bi-search"></i>
+            <input type="text" name="Keyword" value="@filter.Keyword" placeholder="Mã đơn, tên, số điện thoại..." />
+        </div>
+        @{
+            var statusOpts = new[] {
+                (0,"Chờ xác nhận"),(1,"Đã xác nhận"),(2,"Đang chuẩn bị"),
+                (3,"Đang giao"),(4,"Đã giao"),(5,"Đã lắp đặt"),
+                (6,"Hoàn thành"),(7,"Đã hủy"),(8,"Từ chối")
+            };
+            int? sv = filter.Status.HasValue ? (int)filter.Status.Value : (int?)null;
+            var sel = "<select name='Status' class='adm-input' style='width:auto'><option value=''>-- Tất cả --</option>";
+            foreach (var (v, l) in statusOpts)
+                sel += $"<option value='{v}'{(sv==v?" selected":"")}>{l}</option>";
+            sel += "</select>";
+        }
+        @Html.Raw(sel)
+        <input type="date" name="FromDate" value="@filter.FromDate?.ToString("yyyy-MM-dd")" class="adm-input" style="width:auto" />
+        <input type="date" name="ToDate" value="@filter.ToDate?.ToString("yyyy-MM-dd")" class="adm-input" style="width:auto" />
+        <button type="submit" class="btn-adm btn-adm-primary"><i class="bi bi-funnel"></i> Lọc</button>
+        <a href="/admin/orders" class="btn-adm btn-adm-outline"><i class="bi bi-x"></i> Xóa lọc</a>
+    </form>
+</div>
+
+<!-- Quick Filter Tabs -->
+<div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.25rem">
+    <a href="/admin/orders" class="badge-pill @(!filter.Status.HasValue ? "badge-success" : "badge-grey")">Tất cả (@Model.TotalCount)</a>
+    <a href="/admin/orders?Status=0" class="badge-pill @(filter.Status.HasValue && (int)filter.Status.Value == 0 ? "badge-warning" : "badge-grey")">Chờ xác nhận</a>
+    <a href="/admin/orders?Status=1" class="badge-pill @(filter.Status.HasValue && (int)filter.Status.Value == 1 ? "badge-info" : "badge-grey")">Đã xác nhận</a>
+    <a href="/admin/orders?Status=6" class="badge-pill @(filter.Status.HasValue && (int)filter.Status.Value == 6 ? "badge-success" : "badge-grey")">Hoàn thành</a>
+    <a href="/admin/orders?Status=7" class="badge-pill @(filter.Status.HasValue && (int)filter.Status.Value == 7 ? "badge-danger" : "badge-grey")">Đã hủy</a>
+</div>
+
+<!-- Table -->
+<div class="adm-table-wrap">
+    @if (!Model.Items.Any())
+    {
+        <div style="text-align:center;padding:3rem;color:var(--grey-mid)">
+            <i class="bi bi-bag-x" style="font-size:2rem;display:block;margin-bottom:.75rem"></i>
+            Không có đơn hàng nào phù hợp với bộ lọc
+        </div>
+    }
+    else
+    {
+        <table class="adm-table">
+            <thead>
+                <tr>
+                    <th>Mã đơn</th>
+                    <th>Khách hàng</th>
+                    <th>Số SP</th>
+                    <th>Tổng tiền</th>
+                    <th>Trạng thái</th>
+                    <th>Ngày đặt</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var o in Model.Items)
+                {
+                    var bClass = o.Status switch
+                    {
+                        DiemLanh.Domain.Enums.OrderStatus.PendingConfirmation => "badge-warning",
+                        DiemLanh.Domain.Enums.OrderStatus.Confirmed or DiemLanh.Domain.Enums.OrderStatus.Preparing or DiemLanh.Domain.Enums.OrderStatus.Shipping => "badge-info",
+                        DiemLanh.Domain.Enums.OrderStatus.Completed or DiemLanh.Domain.Enums.OrderStatus.Installed or DiemLanh.Domain.Enums.OrderStatus.Delivered => "badge-success",
+                        DiemLanh.Domain.Enums.OrderStatus.Cancelled or DiemLanh.Domain.Enums.OrderStatus.Rejected => "badge-danger",
+                        _ => "badge-grey"
+                    };
+                    <tr>
+                        <td>
+                            <a href="/admin/orders/@o.Id" style="font-family:var(--font-mono);font-weight:700;color:var(--neon);text-decoration:none">
+                                #@o.OrderCode
+                            </a>
+                        </td>
+                        <td>
+                            <div style="font-weight:600">@o.CustomerName</div>
+                            <div style="font-size:.75rem;color:var(--grey-mid)">@o.CustomerPhone</div>
+                        </td>
+                        <td><span class="badge-pill badge-grey">@o.ItemCount SP</span></td>
+                        <td style="font-weight:700;color:var(--neon)">@o.TotalAmount.ToString("N0")đ</td>
+                        <td><span class="badge-pill @bClass">@o.StatusDisplay</span></td>
+                        <td style="color:var(--grey-mid);font-size:.8rem">@o.CreatedAt.AddHours(7).ToString("dd/MM HH:mm")</td>
+                        <td>
+                            <a href="/admin/orders/@o.Id" class="btn-adm btn-adm-outline btn-adm-sm">
+                                <i class="bi bi-eye"></i> Xem
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+<!-- Pagination -->
+@if (Model.TotalPages > 1)
+{
+    <div class="adm-pagination">
+        @if (Model.HasPreviousPage)
+        {
+            <a href="?Page=@(Model.Page-1)&Keyword=@filter.Keyword&Status=@(filter.Status.HasValue?(int)filter.Status.Value:"")"><i class="bi bi-chevron-left"></i></a>
+        }
+        @for (int p = Math.Max(1, Model.Page - 2); p <= Math.Min(Model.TotalPages, Model.Page + 2); p++)
+        {
+            <a href="?Page=@p&Keyword=@filter.Keyword&Status=@(filter.Status.HasValue?(int)filter.Status.Value:"")" class="@(p == Model.Page ? "active" : "")">@p</a>
+        }
+        @if (Model.HasNextPage)
+        {
+            <a href="?Page=@(Model.Page+1)&Keyword=@filter.Keyword&Status=@(filter.Status.HasValue?(int)filter.Status.Value:"")"><i class="bi bi-chevron-right"></i></a>
+        }
+    </div>
+}

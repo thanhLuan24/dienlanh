@@ -1,0 +1,223 @@
+@model DiemLanh.Application.DTOs.Order.OrderDto
+@using DiemLanh.Domain.Enums
+@{
+    ViewData["Title"] = $"Đơn hàng #{Model.OrderCode}";
+    ViewData["ActivePage"] = "Orders";
+    Layout = "_StoreLayout";
+    var techs = ViewBag.Technicians as IEnumerable<DiemLanh.Application.Interfaces.TechnicianDto> ?? Enumerable.Empty<DiemLanh.Application.Interfaces.TechnicianDto>();
+
+    var (statusBg, statusFg) = Model.Status switch {
+        OrderStatus.PendingConfirmation => ("#FEF9C3","#854D0E"),
+        OrderStatus.Confirmed => ("#DBEAFE","#1E40AF"),
+        OrderStatus.Preparing => ("#EDE9FE","#5B21B6"),
+        OrderStatus.Shipping => ("#CFFAFE","#0E7490"),
+        OrderStatus.Delivered or OrderStatus.Installed or OrderStatus.Completed => ("#D1FAE5","#065F46"),
+        OrderStatus.Cancelled or OrderStatus.Rejected => ("#FEE2E2","#991B1B"),
+        _ => ("#F3F4F6","#374151")
+    };
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success"><i class="bi bi-check-circle-fill me-2"></i>@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger"><i class="bi bi-exclamation-circle-fill me-2"></i>@TempData["Error"]</div>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <a href="/manage/orders" class="btn btn-sm btn-outline-secondary mb-2"><i class="bi bi-arrow-left me-1"></i>Danh sách đơn hàng</a>
+        <h4 class="mb-1 fw-bold">Đơn hàng #@Model.OrderCode</h4>
+        <span style="background:@statusBg;color:@statusFg;padding:4px 14px;border-radius:100px;font-size:.75rem;font-weight:700;text-transform:uppercase">@Model.StatusDisplay</span>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Left column -->
+    <div class="col-lg-8">
+        <!-- Products -->
+        <div class="card mb-4">
+            <div class="card-header fw-bold"><i class="bi bi-bag me-2"></i>Sản phẩm</div>
+            <div class="card-body p-0">
+                <table class="table mb-0">
+                    <thead style="background:var(--bg)">
+                        <tr><th class="ps-4">Sản phẩm</th><th class="text-center">SL</th><th class="text-end">Đơn giá</th><th class="text-end pe-4">Thành tiền</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Items)
+                        {
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center gap-3">
+                                        @if (item.ProductImageUrl != null)
+                                        {
+                                            <img src="@item.ProductImageUrl" style="width:48px;height:48px;object-fit:contain;border-radius:6px;border:1px solid var(--border)" />
+                                        }
+                                        <div>
+                                            <div class="fw-semibold">@item.ProductName</div>
+                                            @if (item.WarrantyMonths.HasValue)
+                                            {
+                                                <small class="text-muted">Bảo hành @item.WarrantyMonths tháng</small>
+                                            }
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-center">@item.Quantity</td>
+                                <td class="text-end">@item.UnitPrice.ToString("N0")đ</td>
+                                <td class="text-end pe-4 fw-bold">@item.TotalPrice.ToString("N0")đ</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr style="background:var(--bg)">
+                            <td colspan="3" class="text-end fw-bold ps-4">Tổng cộng:</td>
+                            <td class="text-end pe-4 fw-bold text-primary fs-5">@Model.TotalAmount.ToString("N0")đ</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <!-- Update Status -->
+        <div class="card mb-4">
+            <div class="card-header fw-bold"><i class="bi bi-arrow-repeat me-2"></i>Cập nhật trạng thái</div>
+            <div class="card-body">
+                <form method="post" action="/manage/order-detail/@Model.Id/update-status">
+                    @Html.AntiForgeryToken()
+                    <div class="row g-3">
+                        <div class="col-md-5">
+                            <label class="form-label fw-semibold small">Trạng thái mới</label>
+                            @{
+                                var allStatuses = Enum.GetValues<OrderStatus>();
+                                var statusSelectHtml = "<select name='NewStatus' class='form-select form-select-sm'>";
+                                foreach (var s in allStatuses)
+                                {
+                                    var label2 = s switch {
+                                        OrderStatus.PendingConfirmation => "Chờ xác nhận",
+                                        OrderStatus.Confirmed => "Xác nhận đơn",
+                                        OrderStatus.Preparing => "Đang chuẩn bị",
+                                        OrderStatus.Shipping => "Đang giao",
+                                        OrderStatus.Delivered => "Đã giao",
+                                        OrderStatus.Installed => "Đã lắp đặt",
+                                        OrderStatus.Completed => "Hoàn thành",
+                                        OrderStatus.Cancelled => "Hủy đơn",
+                                        OrderStatus.Rejected => "Từ chối",
+                                        _ => s.ToString()
+                                    };
+                                    statusSelectHtml += $"<option value='{(int)s}'{(s == Model.Status ? " selected" : "")}>{label2}</option>";
+                                }
+                                statusSelectHtml += "</select>";
+                            }
+                            @Html.Raw(statusSelectHtml)
+                        </div>
+                        <div class="col-md-7">
+                            <label class="form-label fw-semibold small">Ghi chú (tuỳ chọn)</label>
+                            <input type="text" name="Note" class="form-control form-control-sm" placeholder="Ghi chú cho khách hàng..." />
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                <i class="bi bi-check2 me-1"></i>Cập nhật
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Schedule Installation (if confirmed/preparing) -->
+        @if (Model.Status == OrderStatus.Confirmed || Model.Status == OrderStatus.Preparing || Model.Status == OrderStatus.Delivered)
+        {
+            <div class="card mb-4">
+                <div class="card-header fw-bold"><i class="bi bi-calendar-plus me-2"></i>Lên lịch lắp đặt</div>
+                <div class="card-body">
+                    <form method="post" action="/manage/order-detail/@Model.Id/schedule-install">
+                        @Html.AntiForgeryToken()
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">Ngày lắp đặt</label>
+                                <input type="date" name="ScheduledDate" class="form-control form-control-sm" min="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-semibold">Giờ</label>
+                                <input type="time" name="ScheduledTime" class="form-control form-control-sm" value="08:00" required />
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label small fw-semibold">Kỹ thuật viên</label>
+                                @{
+                                    var techSelectHtml = "<select name='TechnicianId' class='form-select form-select-sm'><option value=''>-- Chưa phân công --</option>";
+                                    foreach (var t in techs.Where(t => t.IsActive))
+                                        techSelectHtml += $"<option value='{t.Id}'>{t.Name}{(!string.IsNullOrEmpty(t.Specialty) ? $" ({t.Specialty})" : "")}</option>";
+                                    techSelectHtml += "</select>";
+                                }
+                                @Html.Raw(techSelectHtml)
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold">Địa chỉ lắp đặt</label>
+                                <input type="text" name="InstallationAddress" class="form-control form-control-sm" value="@Model.ShippingAddress" required />
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-success btn-sm"><i class="bi bi-calendar-check me-1"></i>Lên lịch</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Right column -->
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header fw-bold"><i class="bi bi-person me-2"></i>Thông tin khách hàng</div>
+            <div class="card-body">
+                <table class="table table-sm mb-0">
+                    <tr><td class="text-muted small">Họ tên</td><td class="fw-semibold">@Model.CustomerName</td></tr>
+                    <tr><td class="text-muted small">SĐT</td><td>@Model.CustomerPhone</td></tr>
+                    <tr><td class="text-muted small">Email</td><td style="font-size:.85rem">@Model.CustomerEmail</td></tr>
+                    <tr><td class="text-muted small">Địa chỉ</td><td style="font-size:.85rem">@Model.ShippingAddress</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header fw-bold"><i class="bi bi-info-circle me-2"></i>Chi tiết đơn</div>
+            <div class="card-body">
+                <table class="table table-sm mb-0">
+                    <tr><td class="text-muted small">Mã đơn</td><td><code>#@Model.OrderCode</code></td></tr>
+                    <tr><td class="text-muted small">Ngày đặt</td><td style="font-size:.85rem">@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td></tr>
+                    @if (Model.ConfirmedAt.HasValue)
+                    {
+                        <tr><td class="text-muted small">Xác nhận lúc</td><td style="font-size:.85rem">@Model.ConfirmedAt.Value.ToString("dd/MM/yyyy HH:mm")</td></tr>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.Note))
+                    {
+                        <tr><td class="text-muted small">Ghi chú KH</td><td style="font-size:.85rem">@Model.Note</td></tr>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.CancelReason))
+                    {
+                        <tr><td class="text-muted small">Lý do hủy</td><td style="font-size:.85rem;color:#DC2626">@Model.CancelReason</td></tr>
+                    }
+                </table>
+            </div>
+        </div>
+
+        @if (Model.Installation != null)
+        {
+            <div class="card">
+                <div class="card-header fw-bold"><i class="bi bi-tools me-2"></i>Lịch lắp đặt</div>
+                <div class="card-body">
+                    <table class="table table-sm mb-0">
+                        <tr><td class="text-muted small">Ngày</td><td>@Model.Installation.ScheduledDate.ToString("dd/MM/yyyy")</td></tr>
+                        <tr><td class="text-muted small">Giờ</td><td>@Model.Installation.ScheduledTime.ToString("HH:mm")</td></tr>
+                        <tr><td class="text-muted small">KTV</td><td>@(Model.Installation.TechnicianName ?? "Chưa phân công")</td></tr>
+                        <tr><td class="text-muted small">Địa chỉ</td><td style="font-size:.8rem">@Model.Installation.InstallationAddress</td></tr>
+                        <tr><td class="text-muted small">Trạng thái</td><td><span class="badge bg-info">@Model.Installation.StatusDisplay</span></td></tr>
+                    </table>
+                    <a href="/manage/installation-detail/@Model.Installation.Id" class="btn btn-sm btn-outline-info mt-2 w-100">Xem chi tiết lắp đặt</a>
+                </div>
+            </div>
+        }
+    </div>
+</div>

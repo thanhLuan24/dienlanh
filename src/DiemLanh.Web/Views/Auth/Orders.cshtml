@@ -1,0 +1,303 @@
+@model List<DiemLanh.Application.DTOs.Order.CustomerOrderSummaryDto>
+@using DiemLanh.Domain.Enums
+@using System.Text.Encodings.Web
+@{
+    ViewData["Title"] = "Đơn Hàng Của Tôi";
+    var activeTab = ViewBag.ActiveTab as string ?? "active";
+
+    var activeOrders = Model.Where(o => o.Status != OrderStatus.Completed).ToList();
+    var completedOrders = Model.Where(o => o.Status == OrderStatus.Completed).ToList();
+    var displayOrders = activeTab == "completed" ? completedOrders : activeOrders;
+}
+
+<style>
+.orders-wrap { max-width: 960px; margin: 2rem auto; padding: 0 1rem; }
+.orders-header { margin-bottom: 1.5rem; }
+
+.orders-nav-tabs { display: flex; border-bottom: 2px solid var(--grey-dark); margin-bottom: 1.5rem; gap: 1rem; }
+.orders-nav-tab { padding: .75rem 1.25rem; font-weight: 700; color: var(--grey-mid); text-decoration: none; border-bottom: 3px solid transparent; margin-bottom: -2px; display: flex; align-items: center; gap: .5rem; transition: all .2s; }
+.orders-nav-tab:hover { color: var(--black); }
+.orders-nav-tab.active { color: var(--neon); border-bottom-color: var(--neon); }
+.orders-nav-tab .tab-badge { background: var(--charcoal); color: var(--grey); border: 1px solid var(--grey-dark); padding: 2px 8px; border-radius: 20px; font-size: .75rem; font-family: var(--font-mono); }
+.orders-nav-tab.active .tab-badge { background: rgba(13, 148, 136, 0.1); color: var(--neon); border-color: var(--neon); }
+
+.order-card { background: var(--white); border: 1px solid var(--grey-dark); border-radius: var(--radius-lg); margin-bottom: 1.25rem; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.03); transition: transform .2s, box-shadow .2s; }
+.order-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,.07); }
+.order-card-header { padding: 1rem 1.5rem; background: var(--charcoal); border-bottom: 1px solid var(--grey-dark); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .5rem; }
+.order-card-body { padding: 1.25rem 1.5rem; }
+.order-card-footer { padding: 1rem 1.5rem; background: #FAFAFA; border-top: 1px solid var(--grey-dark); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+
+.product-row { display: flex; align-items: center; gap: 1rem; padding: .75rem 0; border-bottom: 1px dashed var(--grey-dark); }
+.product-row:last-child { border-bottom: none; }
+.product-thumb { width: 68px; height: 68px; object-fit: contain; border-radius: 8px; background: var(--white); border: 1px solid var(--grey-dark); padding: 4px; flex-shrink: 0; }
+.product-info { flex: 1; min-width: 0; }
+.product-name-link { font-weight: 700; color: var(--black); text-decoration: none; font-size: .95rem; line-height: 1.3; display: block; margin-bottom: .25rem; }
+.product-name-link:hover { color: var(--neon); }
+
+.status-badge { display: inline-flex; align-items: center; gap: .35rem; padding: 4px 12px; border-radius: 100px; font-family: var(--font-mono); font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+.s-pending { background: #FEF3C7; color: #92400E; }
+.s-confirmed { background: #DBEAFE; color: #1E40AF; }
+.s-preparing { background: #EDE9FE; color: #5B21B6; }
+.s-shipping { background: #E0F2FE; color: #0369A1; }
+.s-done { background: #D1FAE5; color: #065F46; }
+.s-cancelled { background: #FEE2E2; color: #991B1B; }
+
+.empty-orders { text-align: center; padding: 4rem 1rem; background: var(--white); border-radius: var(--radius-lg); border: 1px solid var(--grey-dark); }
+.empty-icon { font-size: 3.5rem; color: var(--grey-mid); margin-bottom: 1rem; }
+
+/* Modal Rating */
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 9999; padding: 1rem; }
+.modal-card { background: var(--white); border-radius: var(--radius-lg); max-width: 540px; width: 100%; padding: 1.75rem; box-shadow: 0 20px 40px rgba(0,0,0,0.2); position: relative; }
+.star-rating { display: flex; gap: .5rem; font-size: 2rem; color: #D1D5DB; cursor: pointer; margin-bottom: 1rem; }
+.star-rating .bi-star-fill.active { color: #F59E0B; }
+</style>
+
+<div class="orders-wrap">
+    <div class="orders-header">
+        <p class="label-mono" style="margin-bottom:.3rem"><i class="bi bi-person-circle me-1"></i>Tài khoản của tôi</p>
+        <h1 style="font-size:1.75rem;font-weight:800;text-transform:uppercase;letter-spacing:-.03em;margin:0">
+            Đơn Hàng <span class="text-neon">Của Bạn</span>
+        </h1>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="orders-nav-tabs">
+        <a href="/auth/orders?tab=active" class="orders-nav-tab @(activeTab == "active" ? "active" : "")">
+            <i class="bi bi-clock-history"></i> Chưa hoàn thành
+            <span class="tab-badge">@activeOrders.Count</span>
+        </a>
+        <a href="/auth/orders?tab=completed" class="orders-nav-tab @(activeTab == "completed" ? "active" : "")">
+            <i class="bi bi-check2-all"></i> Đã hoàn thành
+            <span class="tab-badge">@completedOrders.Count</span>
+        </a>
+    </div>
+
+    <!-- Orders List -->
+    @if (!displayOrders.Any())
+    {
+        <div class="empty-orders">
+            <div class="empty-icon"><i class="bi bi-inbox"></i></div>
+            <h3 style="font-weight:700;margin-bottom:.5rem">
+                @(activeTab == "completed" ? "Không có đơn hàng nào đã hoàn thành" : "Bạn chưa có đơn hàng đang xử lý")
+            </h3>
+            <p style="color:var(--grey-mid);margin-bottom:1.5rem">Hãy tham quan cửa hàng và trải nghiệm các sản phẩm điện lạnh chính hãng</p>
+            <a href="/products" class="btn btn-neon" style="display:inline-flex;align-items:center;gap:.5rem">
+                <i class="bi bi-grid"></i> Mua sắm ngay
+            </a>
+        </div>
+    }
+    else
+    {
+        @foreach (var order in displayOrders)
+        {
+            var badgeClass = order.Status switch
+            {
+                OrderStatus.PendingConfirmation => "s-pending",
+                OrderStatus.Confirmed => "s-confirmed",
+                OrderStatus.Preparing => "s-preparing",
+                OrderStatus.Shipping => "s-shipping",
+                OrderStatus.Delivered => "s-shipping",
+                OrderStatus.Installed => "s-done",
+                OrderStatus.Completed => "s-done",
+                OrderStatus.Cancelled => "s-cancelled",
+                OrderStatus.Rejected => "s-cancelled",
+                _ => "s-pending"
+            };
+
+            <div class="order-card">
+                <!-- Card Header -->
+                <div class="order-card-header">
+                    <div style="display:flex;align-items:center;gap:.75rem">
+                        <span style="font-family:var(--font-mono);font-size:.85rem;color:var(--grey-mid)">Đơn hàng: <strong style="color:var(--neon)">#@order.OrderCode</strong></span>
+                        <span style="font-size:.78rem;color:var(--grey-mid)">• @order.CreatedAt.AddHours(7).ToString("dd/MM/yyyy HH:mm")</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:1rem">
+                        <span style="font-size:.8rem;color:var(--grey);font-weight:600"><i class="bi bi-shop me-1"></i>@order.StoreName</span>
+                        <span class="status-badge @badgeClass">@order.StatusDisplay</span>
+                    </div>
+                </div>
+
+                <!-- Card Body (Items) -->
+                <div class="order-card-body">
+                    @foreach (var item in order.Items)
+                    {
+                        <div class="product-row">
+                            @if (!string.IsNullOrEmpty(item.ProductImageUrl))
+                            {
+                                <img src="@item.ProductImageUrl" alt="@item.ProductName" class="product-thumb" />
+                            }
+                            else
+                            {
+                                <div class="product-thumb" style="display:flex;align-items:center;justify-content:center;color:var(--grey-mid);font-size:1.5rem"><i class="bi bi-box"></i></div>
+                            }
+                            <div class="product-info">
+                                @if (!string.IsNullOrEmpty(item.ProductSlug))
+                                {
+                                    <a href="/products/@item.ProductSlug" class="product-name-link" title="Xem thông số sản phẩm trên trang chi tiết">
+                                        @item.ProductName <i class="bi bi-arrow-up-right-square ms-1" style="font-size:.75rem;color:var(--neon)"></i>
+                                    </a>
+                                }
+                                else
+                                {
+                                    <div class="product-name-link" style="color:var(--black)">@item.ProductName</div>
+                                }
+                                <div style="font-size:.82rem;color:var(--grey-mid)">
+                                    Số lượng: <strong>x@item.Quantity</strong> | Đơn giá: <strong>@item.UnitPrice.ToString("N0")đ</strong>
+                                    @if (item.WarrantyMonths.HasValue && item.WarrantyMonths > 0)
+                                    {
+                                        <span class="ms-2 badge bg-light text-dark border"><i class="bi bi-shield-check text-success me-1"></i>Bảo hành @item.WarrantyMonths tháng</span>
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- Single Product Action in Completed Tab -->
+                            @if (order.Status == OrderStatus.Completed && item.ProductId.HasValue)
+                            {
+                                <div>
+                                    <button type="button" class="btn btn-sm btn-outline-warning" style="font-size:.8rem;font-weight:600"
+                                            onclick="openReviewModal(@item.ProductId.Value, '@JavaScriptEncoder.Default.Encode(item.ProductName)')">
+                                        <i class="bi bi-star-fill"></i> Đánh giá
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+
+                <!-- Card Footer -->
+                <div class="order-card-footer">
+                    <div>
+                        <span style="font-size:.85rem;color:var(--grey-mid)">Tổng tiền phải trả:</span>
+                        <span style="font-size:1.25rem;font-weight:800;color:var(--neon);margin-left:.5rem">@order.TotalAmount.ToString("N0")đ</span>
+                    </div>
+
+                    <div style="display:flex;gap:.5rem">
+                        <a href="/auth/orders/@order.Id" class="btn btn-outline" style="padding:6px 14px;font-size:.82rem;font-weight:600">
+                            <i class="bi bi-receipt me-1"></i> Chi tiết đơn hàng
+                        </a>
+                        @if (order.Status == OrderStatus.Completed && order.FirstProductId.HasValue)
+                        {
+                            <button type="button" class="btn btn-neon" style="padding:6px 14px;font-size:.82rem;font-weight:600"
+                                    onclick="openReviewModal(@order.FirstProductId.Value, '@JavaScriptEncoder.Default.Encode(order.FirstProductName ?? "Sản phẩm")')">
+                                <i class="bi bi-star-fill me-1"></i> Đánh giá sản phẩm
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<!-- Review Modal -->
+<div id="reviewModal" class="modal-overlay">
+    <div class="modal-card">
+        <button type="button" onclick="closeReviewModal()" style="position:absolute;top:1rem;right:1rem;background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--grey-mid)">&times;</button>
+        <h4 style="font-weight:800;text-transform:uppercase;margin-bottom:.25rem">Đánh Giá Sản Phẩm</h4>
+        <p id="reviewProductName" style="font-size:.85rem;color:var(--grey-mid);margin-bottom:1.25rem;font-weight:600"></p>
+
+        <form id="reviewForm" onsubmit="submitReview(event)">
+            @Html.AntiForgeryToken()
+            <input type="hidden" id="reviewProductId" name="ProductId" value="" />
+            <input type="hidden" id="reviewRatingInput" name="Rating" value="5" />
+
+            <div style="margin-bottom:1rem;text-align:center">
+                <label style="font-size:.85rem;font-weight:700;display:block;margin-bottom:.5rem">Chọn mức độ hài lòng</label>
+                <div class="star-rating" style="justify-content:center">
+                    <i class="bi bi-star-fill active" onclick="setRating(1)"></i>
+                    <i class="bi bi-star-fill active" onclick="setRating(2)"></i>
+                    <i class="bi bi-star-fill active" onclick="setRating(3)"></i>
+                    <i class="bi bi-star-fill active" onclick="setRating(4)"></i>
+                    <i class="bi bi-star-fill active" onclick="setRating(5)"></i>
+                </div>
+                <div id="ratingText" style="font-size:.8rem;font-weight:700;color:#F59E0B">Tuyệt vời (5/5 sao)</div>
+            </div>
+
+            <div style="margin-bottom:1rem">
+                <label style="font-size:.8rem;font-weight:700;margin-bottom:.25rem;display:block">Tiêu đề đánh giá *</label>
+                <input type="text" name="Title" class="form-control" placeholder="Ví dụ: Sản phẩm dùng rất êm, giao hàng nhanh" required style="border-radius:8px" />
+            </div>
+
+            <div style="margin-bottom:1.25rem">
+                <label style="font-size:.8rem;font-weight:700;margin-bottom:.25rem;display:block">Nội dung nhận xét *</label>
+                <textarea name="Comment" rows="3" class="form-control" placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm..." required style="border-radius:8px"></textarea>
+            </div>
+
+            <div style="display:flex;gap:.75rem;justify-content:flex-end">
+                <button type="button" onclick="closeReviewModal()" class="btn btn-outline" style="border-radius:8px">Hủy</button>
+                <button type="submit" id="btnSubmitReview" class="btn btn-neon" style="border-radius:8px">Gửi Đánh Giá</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let currentRating = 5;
+const ratingLabels = { 1: "Rất tệ (1/5)", 2: "Không hài lòng (2/5)", 3: "Bình thường (3/5)", 4: "Hài lòng (4/5)", 5: "Tuyệt vời (5/5 sao)" };
+
+function setRating(val) {
+    currentRating = val;
+    document.getElementById('reviewRatingInput').value = val;
+    document.getElementById('ratingText').innerText = ratingLabels[val];
+    const stars = document.querySelectorAll('.star-rating i');
+    stars.forEach((star, idx) => {
+        if (idx < val) star.classList.add('active');
+        else star.classList.remove('active');
+    });
+}
+
+function openReviewModal(productId, productName) {
+    document.getElementById('reviewProductId').value = productId;
+    document.getElementById('reviewProductName').innerText = productName;
+    setRating(5);
+    document.getElementById('reviewModal').style.display = 'flex';
+}
+
+function closeReviewModal() {
+    document.getElementById('reviewModal').style.display = 'none';
+    document.getElementById('reviewForm').reset();
+}
+
+async function submitReview(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnSubmitReview');
+    btn.disabled = true;
+    btn.innerText = "Đang gửi...";
+
+    const productId = parseInt(document.getElementById('reviewProductId').value);
+    const rating = parseInt(document.getElementById('reviewRatingInput').value);
+    const title = e.target.Title.value;
+    const comment = e.target.Comment.value;
+
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+    try {
+        const res = await fetch('/products/reviews', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': token
+            },
+            body: JSON.stringify({
+                productId: productId,
+                rating: rating,
+                title: title,
+                comment: comment
+            })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+            alert('Cảm ơn bạn đã gửi đánh giá cho sản phẩm!');
+            closeReviewModal();
+        } else {
+            alert(data.message || 'Có lỗi xảy ra khi gửi đánh giá.');
+        }
+    } catch (err) {
+        alert('Lỗi kết nối máy chủ.');
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "Gửi Đánh Giá";
+    }
+}
+</script>

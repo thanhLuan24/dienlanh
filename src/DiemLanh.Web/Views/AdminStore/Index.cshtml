@@ -1,0 +1,144 @@
+@model DiemLanh.Application.Common.PagedResult<DiemLanh.Application.DTOs.Admin.AdminStoreListDto>
+@{
+    ViewData["Title"] = "Quản lý Cửa hàng";
+    ViewData["AdminTitle"] = "Cửa hàng trong hệ thống";
+    Layout = "~/Views/Admin/_AdminLayout.cshtml";
+}
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
+    <div style="font-family:var(--font-mono);font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--grey-mid)">
+        Hiển thị @Model.Items.Count / @Model.TotalCount cửa hàng
+    </div>
+    <a href="/admin/stores/create" class="btn-adm btn-adm-primary">
+        <i class="bi bi-plus-lg"></i> Thêm cửa hàng
+    </a>
+</div>
+
+<!-- Filter Bar -->
+<form method="get" action="/admin/stores" class="adm-filter-bar">
+    <div class="adm-search">
+        <i class="bi bi-search"></i>
+        <input type="text" name="keyword" value="@ViewBag.Keyword" placeholder="Tên cửa hàng, email..."/>
+    </div>
+    <select name="status" onchange="this.form.submit()" style="background:var(--charcoal);border:1px solid var(--grey-dark);color:var(--black);padding:8px 12px;border-radius:6px;font-size:.85rem;outline:none">
+        <option value="">-- Tất cả trạng thái --</option>
+        <option value="Pending" selected="@(ViewBag.Status=="Pending")">Chờ duyệt</option>
+        <option value="Active" selected="@(ViewBag.Status=="Active")">Hoạt động</option>
+        <option value="Suspended" selected="@(ViewBag.Status=="Suspended")">Tạm ngưng</option>
+        <option value="Closed" selected="@(ViewBag.Status=="Closed")">Đã đóng</option>
+    </select>
+    <button type="submit" class="btn-adm btn-adm-primary"><i class="bi bi-search"></i> Tìm</button>
+    <a href="/admin/stores" class="btn-adm btn-adm-outline">Xóa bộ lọc</a>
+</form>
+
+<div class="adm-table-wrap">
+    <table class="adm-table">
+        <thead>
+            <tr>
+                <th>Cửa hàng</th>
+                <th>ID</th>
+                <th>Liên hệ</th>
+                <th>Tỉnh/TP</th>
+                <th>Chủ sở hữu</th>
+                <th>Sản phẩm</th>
+                <th>Đánh giá</th>
+                <th>Trạng thái</th>
+                <th style="text-align:right">Hành động</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var s in Model.Items)
+            {
+                <tr>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:10px">
+                            @if (!string.IsNullOrEmpty(s.LogoUrl))
+                            {
+                                <img src="@s.LogoUrl" alt="" class="adm-img-thumb"/>
+                            }
+                            else
+                            {
+                                <div class="adm-img-thumb" style="display:flex;align-items:center;justify-content:center;color:var(--grey-mid);font-size:1.1rem"><i class="bi bi-shop"></i></div>
+                            }
+                            <div>
+                                <div style="font-weight:600">@s.Name</div>
+                                <div style="font-size:.7rem;color:var(--grey-mid);font-family:var(--font-mono)">@s.Slug</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td style="font-family:var(--font-mono);font-size:.75rem;color:var(--grey-mid)">#@s.Id</td>
+                    <td>
+                        <div style="font-size:.82rem">@s.PhoneNumber</div>
+                        @if (!string.IsNullOrEmpty(s.Email))
+                        {
+                            <div style="font-size:.72rem;color:var(--grey-mid)">@s.Email</div>
+                        }
+                    </td>
+                    <td style="font-size:.82rem;color:var(--grey)">@(string.IsNullOrEmpty(s.Province) ? "–" : s.Province)</td>
+                    <td style="font-size:.82rem;color:var(--grey)">@(string.IsNullOrEmpty(s.OwnerName) ? "–" : s.OwnerName)</td>
+                    <td style="font-weight:600;color:var(--neon)">@s.ProductCount</td>
+                    <td>
+                        @if (s.AverageRating.HasValue)
+                        {
+                            <span style="color:#FFC107;font-weight:600">⭐ @s.AverageRating.Value.ToString("F1")</span>
+                        }
+                        else
+                        {
+                            <span style="color:var(--grey-mid)">–</span>
+                        }
+                    </td>
+                    <td>
+                        <span class="badge-pill @(s.StatusColor=="success"?"badge-success":s.StatusColor=="warning"?"badge-warning":s.StatusColor=="danger"?"badge-danger":"badge-grey")">
+                            @s.Status
+                        </span>
+                    </td>
+                    <td>
+                        <div style="display:flex;gap:6px;justify-content:flex-end">
+                            <a href="/admin/stores/@s.Id/manage" class="btn-adm btn-adm-sm btn-adm-primary" title="Quản lý chi tiết cửa hàng">
+                                <i class="bi bi-gear-fill"></i> Quản lý
+                            </a>
+                            <a href="/stores/@s.Slug" target="_blank" class="btn-adm btn-adm-sm btn-adm-outline" title="Xem trang public">
+                                <i class="bi bi-box-arrow-up-right"></i>
+                            </a>
+                            <form method="post" action="/admin/stores/@s.Id/toggle-status" style="margin:0">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn-adm btn-adm-sm @(s.StatusColor=="success"?"btn-adm-outline":"btn-adm-primary")"
+                                        onclick="return confirm('@(s.Status=="Đang hoạt động"?"Tạm ngưng cửa hàng này?":"Kích hoạt cửa hàng này?")')">
+                                    <i class="bi @(s.Status=="Đang hoạt động"?"bi-pause-circle":"bi-play-circle")"></i>
+                                    @(s.Status == "Đang hoạt động" ? "Ngưng" : "Duyệt")
+                                </button>
+                            </form>
+                            <form method="post" action="/admin/stores/@s.Id/delete" style="margin:0">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn-adm btn-adm-sm btn-adm-danger"
+                                        onclick="return confirm('Xóa cửa hàng \"@s.Name\" và tất cả sản phẩm?')">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            }
+            @if (!Model.Items.Any())
+            {
+                <tr><td colspan="9" style="text-align:center;color:var(--grey-mid);padding:3rem">
+                    <i class="bi bi-shop" style="font-size:2rem;display:block;margin-bottom:.5rem"></i>
+                    Không tìm thấy cửa hàng nào
+                </td></tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+@if (Model.TotalPages > 1)
+{
+    <div class="adm-pagination">
+        @if (Model.HasPreviousPage) { <a href="/admin/stores?page=@(Model.Page-1)&keyword=@ViewBag.Keyword"><i class="bi bi-chevron-left"></i></a> }
+        @for (int i = Math.Max(1, Model.Page - 2); i <= Math.Min(Model.TotalPages, Model.Page + 2); i++)
+        {
+            <a href="/admin/stores?page=@i&keyword=@ViewBag.Keyword" class="@(i==Model.Page?"active":"")">@i</a>
+        }
+        @if (Model.HasNextPage) { <a href="/admin/stores?page=@(Model.Page+1)&keyword=@ViewBag.Keyword"><i class="bi bi-chevron-right"></i></a> }
+    </div>
+}

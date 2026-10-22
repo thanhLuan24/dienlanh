@@ -1,0 +1,43 @@
+@model DiemLanh.Application.DTOs.Product.ProductCardDto
+
+<div class="row g-4">
+    <div class="col-md-5 text-center">
+        @if (!string.IsNullOrEmpty(Model.MainImageUrl))
+        {
+            <img src="@Model.MainImageUrl" alt="@Model.Name" style="max-height:260px;object-fit:contain;border-radius:var(--radius-md)" />
+        }
+        else
+        {
+            <div style="height:220px;background:var(--charcoal);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center">
+                <i class="bi bi-wind" style="font-size:4rem;color:var(--grey-mid)"></i>
+            </div>
+        }
+    </div>
+    <div class="col-md-7">
+        <div style="font-family:var(--font-mono);font-size:.7rem;color:var(--neon);letter-spacing:.1em;text-transform:uppercase">
+            @Model.Brand // @Model.CategoryName
+        </div>
+        <h3 style="font-weight:700;font-size:1.25rem;color:var(--black);margin:.5rem 0 1rem">@Model.Name</h3>
+        
+        <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem">
+            <span style="font-size:1.5rem;font-weight:800;color:var(--neon)">@((Model.SalePrice ?? Model.Price).ToString("N0"))đ</span>
+            @if (Model.SalePrice.HasValue && Model.SalePrice < Model.Price)
+            {
+                <span style="text-decoration:line-through;color:var(--grey-mid);font-size:.9rem">@Model.Price.ToString("N0")đ</span>
+            }
+        </div>
+
+        <div style="display:flex;gap:1.5rem;font-size:.85rem;color:var(--grey);margin-bottom:1.5rem;padding:12px;background:rgba(0,0,0,.04);border-radius:4px">
+            <div><strong>Đánh giá:</strong> ⭐ @Model.AverageRating.ToString("F1") (@Model.ReviewCount)</div>
+            <div><strong>Bán tại:</strong> @Model.StoreName</div>
+            <div><strong>Tồn kho:</strong> @(Model.Stock > 0 ? "Còn hàng" : "Hết hàng")</div>
+        </div>
+
+        <div style="display:flex;gap:1rem">
+            <a href="/products/@Model.Slug" class="btn btn-neon" style="flex:1;justify-content:center">
+                Xem chi tiết đầy đủ <i class="bi bi-arrow-right"></i>
+            </a>
+            <button type="button" class="btn btn-outline" data-bs-dismiss="modal">Đóng</button>
+        </div>
+    </div>
+</div>

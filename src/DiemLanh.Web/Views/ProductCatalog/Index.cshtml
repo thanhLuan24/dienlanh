@@ -1,0 +1,414 @@
+@model DiemLanh.Application.Common.PagedResult<DiemLanh.Application.DTOs.Product.ProductCardDto>
+@{
+    ViewData["Title"] = "Khám phá Sản phẩm Điện Lạnh | CoolConnect";
+    var filter = ViewBag.Filter as DiemLanh.Application.DTOs.Product.ProductCatalogFilterDto ?? new();
+    var categories = ViewBag.Categories as IEnumerable<DiemLanh.Application.DTOs.Product.ProductCategoryDto> ?? Enumerable.Empty<DiemLanh.Application.DTOs.Product.ProductCategoryDto>();
+    var brands = ViewBag.Brands as IEnumerable<ProductBrandDto> ?? Enumerable.Empty<ProductBrandDto>();
+}
+
+@section Head {
+<meta name="description" content="Khám phá và mua sắm thiết bị điện lạnh chính hãng: Điều hòa Inverter, máy giặt, tủ lạnh, máy lọc nước. Giá ưu mại từ 200+ cửa hàng uy tín toàn quốc.">
+<link rel="canonical" href="/products" />
+}
+
+<div style="background:var(--white);min-height:100vh;padding-top:20px;padding-bottom:100px;">
+    <!-- Breadcrumb & Header -->
+    <div class="container">
+        <div style="display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:.75rem;color:var(--grey-mid);margin-bottom:1.5rem">
+            <a href="/" style="color:var(--grey-mid)">Trang chủ</a>
+            <i class="bi bi-chevron-right" style="font-size:.65rem"></i>
+            <span style="color:var(--neon)">Sản phẩm</span>
+            @if (!string.IsNullOrEmpty(filter.CategorySlug))
+            {
+                var curCat = categories.FirstOrDefault(c => c.Slug == filter.CategorySlug);
+                if (curCat != null)
+                {
+                    <i class="bi bi-chevron-right" style="font-size:.65rem"></i>
+                    <span style="color:var(--black)">@curCat.Name</span>
+                }
+            }
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:2.5rem;flex-wrap:wrap;gap:1.5rem">
+            <div>
+                <div class="section-eyebrow"><span class="label-mono">Catalog Discovery</span></div>
+                <h1 class="display-lg">Thiết bị <span class="text-neon">Điện Lạnh</span></h1>
+                <p style="color:var(--grey-mid);font-size:.9rem;margin-top:.5rem;max-width:560px">
+                    Tìm kiếm, so sánh và lựa chọn sản phẩm phù hợp với nhu cầu sử dụng và ngân sách của bạn từ các cửa hàng uy tín.
+                </p>
+            </div>
+            <div style="display:flex;align-items:center;gap:1rem">
+                <!-- Search Box -->
+                <div style="position:relative;width:280px">
+                    <input type="text" id="catalogSearchInput" value="@filter.Keyword" 
+                           placeholder="Tìm tên, model, SKU..." 
+                           style="width:100%;background:var(--charcoal);border:1px solid var(--grey-dark);color:var(--black);padding:10px 14px 10px 38px;border-radius:var(--radius-sm);font-family:var(--font-main);font-size:.875rem;outline:none"
+                           onkeyup="onSearchInput(event)" />
+                    <i class="bi bi-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--grey-mid);font-size:.9rem"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Discovery Layout: Filters + Product Grid -->
+    <div class="container">
+        <div class="row g-4">
+            <!-- Faceted Filter Sidebar -->
+            <div class="col-lg-3">
+                <form id="filterForm" method="get" action="/products" style="background:var(--charcoal);border:1px solid var(--grey-dark);border-radius:var(--radius-md);padding:1.5rem">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid var(--grey-dark)">
+                        <span class="label-mono" style="font-size:.8rem;color:var(--neon)"><i class="bi bi-funnel me-1"></i>Bộ lọc tìm kiếm</span>
+                        <a href="/products" style="font-family:var(--font-mono);font-size:.7rem;color:var(--grey-mid);text-decoration:underline">Xóa tất cả</a>
+                    </div>
+
+                    <!-- Hidden Page / Sort Inputs -->
+                    <input type="hidden" name="SortBy" value="@filter.SortBy" />
+                    <input type="hidden" name="CategorySlug" value="@filter.CategorySlug" />
+
+                    <!-- Filter: Danh mục -->
+                    <div style="margin-bottom:1.75rem">
+                        <div style="font-family:var(--font-mono);font-size:.7rem;color:var(--black);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.75rem">Danh Mục</div>
+                        <div style="display:flex;flex-direction:column;gap:.5rem">
+                            <a href="/products" class="d-block text-decoration-none" style="font-size:.85rem;color:@(string.IsNullOrEmpty(filter.CategorySlug) ? "var(--neon)" : "var(--grey)");font-weight:@(string.IsNullOrEmpty(filter.CategorySlug) ? "700" : "400")">
+                                Tất cả danh mục
+                            </a>
+                            @foreach (var c in categories)
+                            {
+                                <a href="/products?CategorySlug=@c.Slug" class="d-block text-decoration-none" style="font-size:.85rem;color:@(filter.CategorySlug == c.Slug ? "var(--neon)" : "var(--grey)");font-weight:@(filter.CategorySlug == c.Slug ? "700" : "400")">
+                                    @c.Name <span style="font-family:var(--font-mono);font-size:.7rem;color:var(--grey-mid)">(@c.ProductCount)</span>
+                                </a>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Filter: Thương hiệu -->
+                    <div style="margin-bottom:1.75rem">
+                        <div style="font-family:var(--font-mono);font-size:.7rem;color:var(--black);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.75rem">Thương Hiệu</div>
+                        <div style="max-height:180px;overflow-y:auto;display:flex;flex-direction:column;gap:.4rem;padding-right:6px">
+                            @foreach (var b in brands)
+                            {
+                                var isChecked = filter.BrandSlugs != null && filter.BrandSlugs.Contains(b.Slug);
+                                <label style="display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--grey);cursor:pointer">
+                                    <input type="checkbox" name="BrandSlugs" value="@b.Slug" @(isChecked ? "checked" : "") onchange="this.form.submit()" style="accent-color:var(--neon)" />
+                                    <span>@b.Name</span>
+                                    <span style="font-family:var(--font-mono);font-size:.65rem;color:var(--grey-mid);margin-left:auto">@b.ProductCount</span>
+                                </label>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Filter: Khoảng giá -->
+                    <div style="margin-bottom:1.75rem">
+                        <div style="font-family:var(--font-mono);font-size:.7rem;color:var(--black);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.75rem">Khoảng Giá (VNĐ)</div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:.75rem">
+                            <input type="number" name="MinPrice" value="@filter.MinPrice" placeholder="Từ" style="background:var(--white);border:1px solid var(--grey-dark);color:var(--black);padding:6px 10px;font-size:.8rem;border-radius:4px;width:100%" />
+                            <input type="number" name="MaxPrice" value="@filter.MaxPrice" placeholder="Đến" style="background:var(--white);border:1px solid var(--grey-dark);color:var(--black);padding:6px 10px;font-size:.8rem;border-radius:4px;width:100%" />
+                        </div>
+                        <button type="submit" class="btn btn-outline" style="width:100%;padding:6px;font-size:.75rem;justify-content:center">Áp dụng giá</button>
+                    </div>
+
+                    <!-- Filter: Inverter & Tính năng -->
+                    <div style="margin-bottom:1.75rem">
+                        <div style="font-family:var(--font-mono);font-size:.7rem;color:var(--black);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.75rem">Công Nghệ</div>
+                        <label style="display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--neon);cursor:pointer;font-weight:600">
+                            <input type="checkbox" name="IsInverter" value="true" @(filter.IsInverter == true ? "checked" : "") onchange="this.form.submit()" style="accent-color:var(--neon)" />
+                            <span><i class="bi bi-lightning-charge-fill me-1"></i>Tiết kiệm điện Inverter</span>
+                        </label>
+                    </div>
+
+                    <!-- Filter: Công suất BTU (Điều hòa) -->
+                    <div style="margin-bottom:1.75rem">
+                        <div style="font-family:var(--font-mono);font-size:.7rem;color:var(--black);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.75rem">Công Suất (BTU)</div>
+                        <div style="display:flex;flex-wrap:wrap;gap:6px">
+                            @foreach (var btu in new[] { 9000, 12000, 18000, 24000 })
+                            {
+                                var isSel = filter.CapacityBtu == btu;
+                                <a href="/products?CapacityBtu=@(isSel ? "" : btu.ToString())" 
+                                   style="padding:4px 10px;font-family:var(--font-mono);font-size:.75rem;border:1px solid @(isSel ? "var(--neon)" : "var(--grey-dark)");color:@(isSel ? "var(--neon)" : "var(--grey)");border-radius:4px;text-decoration:none;background:@(isSel ? "rgba(13,148,136,.1)" : "transparent")">
+                                    @btu.ToString("N0")
+                                </a>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Filter: Diện tích phòng -->
+                    <div style="margin-bottom:1.75rem">
+                        <div style="font-family:var(--font-mono);font-size:.7rem;color:var(--black);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.75rem">Diện Tích Phòng</div>
+                        <div style="display:flex;flex-direction:column;gap:.4rem">
+                            @{
+                                var areaOpts = new[] {
+                                    ("UNDER_15", "< 15m² (Dưới 9.000 BTU)"),
+                                    ("FROM_15_TO_20", "15 - 20m² (12.000 BTU)"),
+                                    ("FROM_20_TO_30", "20 - 30m² (18.000 BTU)"),
+                                    ("OVER_30", "> 30m² (Trên 24.000 BTU)")
+                                };
+                            }
+                            @foreach (var (code, label) in areaOpts)
+                            {
+                                var isAreaSel = filter.RoomAreaCode == code;
+                                <label style="display:flex;align-items:center;gap:8px;font-size:.8rem;color:@(isAreaSel ? "var(--neon)" : "var(--grey)");cursor:pointer">
+                                    <input type="radio" name="RoomAreaCode" value="@code" @(isAreaSel ? "checked" : "") onchange="this.form.submit()" style="accent-color:var(--neon)" />
+                                    <span>@label</span>
+                                </label>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Filter: Đánh giá tối thiểu -->
+                    <div>
+                        <div style="font-family:var(--font-mono);font-size:.7rem;color:var(--black);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.75rem">Đánh Giá</div>
+                        @foreach (var r in new[] { 4.5, 4.0, 3.5 })
+                        {
+                            var isRSel = filter.MinRating == r;
+                            <a href="/products?MinRating=@(isRSel ? "" : r.ToString())" style="display:block;font-size:.8rem;color:@(isRSel ? "var(--neon)" : "var(--grey)");text-decoration:none;margin-bottom:4px">
+                                Từ @r.ToString("F1") ⭐ trở lên
+                            </a>
+                        }
+                    </div>
+                </form>
+            </div>
+
+            <!-- Products Display Area -->
+            <div class="col-lg-9">
+                <!-- Sorting & Control Toolbar -->
+                <div style="display:flex;align-items:center;justify-content:space-between;background:var(--charcoal);border:1px solid var(--grey-dark);border-radius:var(--radius-md);padding:1rem 1.5rem;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem">
+                    <div style="font-family:var(--font-mono);font-size:.8rem;color:var(--grey-mid)">
+                        Hiển thị <span style="color:var(--neon);font-weight:700">@Model.Items.Count</span> / <span style="color:var(--black)">@Model.TotalCount</span> sản phẩm
+                    </div>
+                    <div style="display:flex;align-items:center;gap:12px">
+                        <span style="font-family:var(--font-mono);font-size:.75rem;color:var(--grey-mid);text-transform:uppercase">Sắp xếp:</span>
+                        <select onchange="changeSort(this.value)" style="background:var(--white);border:1px solid var(--grey-dark);color:var(--black);padding:6px 12px;font-family:var(--font-main);font-size:.8rem;border-radius:4px;outline:none">
+                            <option value="featured" selected="@(filter.SortBy == "featured")">Nổi bật nhất</option>
+                            <option value="price_asc" selected="@(filter.SortBy == "price_asc")">Giá tăng dần</option>
+                            <option value="price_desc" selected="@(filter.SortBy == "price_desc")">Giá giảm dần</option>
+                            <option value="new" selected="@(filter.SortBy == "new")">Mới nhất</option>
+                            <option value="best_seller" selected="@(filter.SortBy == "best_seller")">Bán chạy nhất</option>
+                            <option value="rating" selected="@(filter.SortBy == "rating")">Đánh giá cao</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Products Grid -->
+                @if (!Model.Items.Any())
+                {
+                    <div style="background:var(--charcoal);border:1px dashed var(--grey-dark);border-radius:var(--radius-md);padding:5rem 2rem;text-align:center">
+                        <i class="bi bi-box-seam" style="font-size:3.5rem;color:var(--grey-mid);display:block;margin-bottom:1rem"></i>
+                        <h4 style="font-weight:700;color:var(--black);margin-bottom:.5rem">Không tìm thấy sản phẩm phù hợp</h4>
+                        <p style="color:var(--grey-mid);font-size:.9rem;margin-bottom:1.5rem">Thử thay đổi bộ lọc hoặc tìm kiếm với từ khóa khác</p>
+                        <a href="/products" class="btn btn-neon">Xóa bộ lọc</a>
+                    </div>
+                }
+                else
+                {
+                    <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(250px, 1fr));gap:1px;background:var(--grey-dark);border:1px solid var(--grey-dark)">
+                        @foreach (var p in Model.Items)
+                        {
+                            <div class="product-card" id="pcard-@p.Id">
+                                @if (p.DiscountPercent > 0)
+                                {
+                                    <div class="product-badge red">-@p.DiscountPercent%</div>
+                                }
+                                else if (p.IsFeatured)
+                                {
+                                    <div class="product-badge">HOT</div>
+                                }
+
+                                <div class="product-card-img" onclick="location.href='/products/@p.Slug'">
+                                    @if (!string.IsNullOrEmpty(p.MainImageUrl))
+                                    {
+                                        <img src="@p.MainImageUrl" alt="@p.Name" loading="lazy" />
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-wind" style="font-size:4rem;color:#ccc;opacity:.5"></i>
+                                    }
+                                </div>
+
+                                <div class="product-brand">@p.Brand // @p.CategoryName</div>
+                                <a href="/products/@p.Slug" class="product-name" style="text-decoration:none">@p.Name</a>
+                                
+                                @if (p.IsInverter)
+                                {
+                                    <div style="font-family:var(--font-mono);font-size:.65rem;color:var(--neon);margin-bottom:6px;display:flex;align-items:center;gap:4px">
+                                        <i class="bi bi-lightning-charge-fill"></i> Inverter Tiết Kiệm Điện
+                                    </div>
+                                }
+
+                                <div style="display:flex;align-items:center;gap:6px;font-size:.75rem;margin-bottom:8px">
+                                    <span style="color:var(--accent-gold);font-weight:700">⭐ @p.AverageRating.ToString("F1")</span>
+                                    <span style="color:var(--grey-mid)">(@p.ReviewCount)</span>
+                                    <span style="color:var(--grey);margin-left:auto;font-size:.7rem">@p.StoreName</span>
+                                </div>
+
+                                <div class="product-price-row">
+                                    <div>
+                                        <div class="product-price">@((p.SalePrice ?? p.Price).ToString("N0"))đ</div>
+                                        @if (p.SalePrice.HasValue && p.SalePrice < p.Price)
+                                        {
+                                            <div class="product-price-old">@p.Price.ToString("N0")đ</div>
+                                        }
+                                    </div>
+                                    <button class="btn btn-outline" style="padding:6px 10px;font-size:.7rem;margin-left:auto" 
+                                            onclick="openQuickView(@p.Id)" title="Xem nhanh">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+
+                                <!-- Card Footer Actions: Compare checkbox -->
+                                <div style="display:flex;align-items:center;justify-content:space-between;padding-top:10px;margin-top:10px;border-top:1px solid rgba(255,255,255,0.06);font-size:.7rem">
+                                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--grey)">
+                                        <input type="checkbox" class="compare-chk" data-id="@p.Id" data-name="@p.Name" data-img="@p.MainImageUrl" onchange="onCompareChange(this)" />
+                                        <span>So sánh</span>
+                                    </label>
+                                    <span style="color:@(p.Stock > 0 ? "#10b981" : "#ef4444");font-weight:600">
+                                        @(p.Stock > 0 ? "Còn hàng" : "Hết hàng")
+                                    </span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Pagination -->
+                    @if (Model.TotalPages > 1)
+                    {
+                        <div style="display:flex;justify-content:center;gap:8px;margin-top:3rem">
+                            @if (Model.HasPreviousPage)
+                            {
+                                <a href="/products?Page=@(Model.Page-1)&CategorySlug=@filter.CategorySlug&Keyword=@filter.Keyword&SortBy=@filter.SortBy" class="btn btn-outline" style="padding:8px 16px;font-size:.8rem"><i class="bi bi-chevron-left"></i> Trang trước</a>
+                            }
+                            @for (int pNum = Math.Max(1, Model.Page - 2); pNum <= Math.Min(Model.TotalPages, Model.Page + 2); pNum++)
+                            {
+                                <a href="/products?Page=@pNum&CategorySlug=@filter.CategorySlug&Keyword=@filter.Keyword&SortBy=@filter.SortBy" 
+                                   class="btn @(pNum == Model.Page ? "btn-neon" : "btn-outline")" style="padding:8px 16px;font-size:.8rem">
+                                    @pNum
+                                </a>
+                            }
+                            @if (Model.HasNextPage)
+                            {
+                                <a href="/products?Page=@(Model.Page+1)&CategorySlug=@filter.CategorySlug&Keyword=@filter.Keyword&SortBy=@filter.SortBy" class="btn btn-outline" style="padding:8px 16px;font-size:.8rem">Trang sau <i class="bi bi-chevron-right"></i></a>
+                            }
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sticky Floating Compare Drawer Bar -->
+<div id="compareBar" style="position:fixed;bottom:0;left:0;right:0;background:rgba(255,255,255,.95);backdrop-filter:blur(12px);border-top:2px solid var(--neon);box-shadow:0 -10px 30px rgba(0,0,0,0.08);z-index:1050;padding:12px 0;transform:translateY(100%);transition:transform .3s ease">
+    <div class="container" style="display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:1rem">
+            <span class="label-mono" style="color:var(--neon)"><i class="bi bi-arrow-left-right me-1"></i>So sánh sản phẩm (<span id="compareCount">0</span>/4)</span>
+            <div id="compareItemsThumb" style="display:flex;gap:8px"></div>
+        </div>
+        <div style="display:flex;gap:1rem">
+            <button onclick="clearCompare()" class="btn btn-outline" style="padding:6px 14px;font-size:.75rem">Xóa tất cả</button>
+            <button onclick="goToCompare()" class="btn btn-neon" style="padding:6px 18px;font-size:.8rem">So sánh ngay <i class="bi bi-arrow-right me-1"></i></button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Quick View Container -->
+<div class="modal fade" id="quickViewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content" style="background:var(--white);color:var(--black);border:1px solid var(--grey-dark);border-radius:var(--radius-lg);box-shadow:var(--shadow-card)">
+            <div id="quickViewContent" style="padding:2rem">
+                <div class="text-center text-muted py-5"><div class="spinner-border text-neon"></div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+let selectedCompare = [];
+
+function changeSort(val) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('SortBy', val);
+    window.location.href = url.toString();
+}
+
+function onSearchInput(e) {
+    if (e.key === 'Enter') {
+        const url = new URL(window.location.href);
+        url.searchParams.set('Keyword', e.target.value);
+        window.location.href = url.toString();
+    }
+}
+
+function onCompareChange(chk) {
+    const pid = parseInt(chk.dataset.id);
+    const pname = chk.dataset.name;
+    const pimg = chk.dataset.img;
+
+    if (chk.checked) {
+        if (selectedCompare.length >= 4) {
+            alert('Bạn chỉ có thể so sánh tối đa 4 sản phẩm cùng lúc.');
+            chk.checked = false;
+            return;
+        }
+        if (!selectedCompare.some(x => x.id === pid)) {
+            selectedCompare.push({ id: pid, name: pname, img: pimg });
+        }
+    } else {
+        selectedCompare = selectedCompare.filter(x => x.id !== pid);
+    }
+    updateCompareBar();
+}
+
+function updateCompareBar() {
+    const bar = document.getElementById('compareBar');
+    const countEl = document.getElementById('compareCount');
+    const thumbBox = document.getElementById('compareItemsThumb');
+
+    countEl.textContent = selectedCompare.length;
+    thumbBox.innerHTML = selectedCompare.map(x => `
+        <div style="background:#fff;border-radius:4px;padding:4px 8px;display:flex;align-items:center;gap:6px;font-size:.7rem;color:#111">
+            <span style="font-weight:600;max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${x.name}</span>
+            <span style="cursor:pointer;color:red;font-weight:700" onclick="removeCompareItem(${x.id})">×</span>
+        </div>
+    `).join('');
+
+    if (selectedCompare.length > 0) {
+        bar.style.transform = 'translateY(0)';
+    } else {
+        bar.style.transform = 'translateY(100%)';
+    }
+}
+
+function removeCompareItem(pid) {
+    selectedCompare = selectedCompare.filter(x => x.id !== pid);
+    const chk = document.querySelector(`.compare-chk[data-id="${pid}"]`);
+    if (chk) chk.checked = false;
+    updateCompareBar();
+}
+
+function clearCompare() {
+    selectedCompare = [];
+    document.querySelectorAll('.compare-chk').forEach(c => c.checked = false);
+    updateCompareBar();
+}
+
+function goToCompare() {
+    if (selectedCompare.length < 2) {
+        alert('Vui lòng chọn ít nhất 2 sản phẩm để so sánh.');
+        return;
+    }
+    const ids = selectedCompare.map(x => x.id).join(',');
+    window.location.href = `/products/compare?ids=${ids}`;
+}
+
+function openQuickView(pid) {
+    const modal = new bootstrap.Modal(document.getElementById('quickViewModal'));
+    const container = document.getElementById('quickViewContent');
+    container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-neon"></div></div>';
+    modal.show();
+
+    fetch(`/products/quick-view/${pid}`)
+        .then(r => r.text())
+        .then(html => { container.innerHTML = html; });
+}
+</script>
+}

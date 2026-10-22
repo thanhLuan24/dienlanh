@@ -1,0 +1,153 @@
+@model DiemLanh.Application.Common.PagedResult<DiemLanh.Application.DTOs.Order.OrderListDto>
+@{
+    ViewData["Title"] = "Quản lý Đơn hàng";
+    ViewData["ActivePage"] = "Orders";
+    Layout = "_StoreLayout";
+    var filter = ViewBag.Filter as DiemLanh.Application.DTOs.Order.OrderFilterDto ?? new();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1 fw-bold">Quản lý Đơn hàng</h4>
+        <p class="text-muted mb-0">Tổng cộng @Model.TotalCount đơn hàng</p>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" action="/manage/orders/index">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <input type="text" name="Keyword" value="@filter.Keyword" class="form-control" placeholder="Mã đơn, tên, SĐT..." />
+                </div>
+                @{
+                    int? sv = filter.Status.HasValue ? (int)filter.Status.Value : (int?)null;
+                    var statusOptions = new[]
+                    {
+                        (0, "Chờ xác nhận"), (1, "Đã xác nhận"), (2, "Đang chuẩn bị"),
+                        (3, "Đang giao"), (4, "Đã giao"), (5, "Đã lắp đặt"),
+                        (6, "Hoàn thành"), (7, "Đã hủy"), (8, "Từ chối")
+                    };
+                    var selectHtml = "<select name='Status' class='form-select'><option value=''>-- Tất cả trạng thái --</option>";
+                    foreach (var (val, lbl) in statusOptions)
+                        selectHtml += $"<option value='{val}'{(sv == val ? " selected" : "")}>{lbl}</option>";
+                    selectHtml += "</select>";
+                }
+                @Html.Raw(selectHtml)
+                <div class="col-md-2">
+                    <input type="date" name="FromDate" value="@filter.FromDate?.ToString("yyyy-MM-dd")" class="form-control" />
+                </div>
+                <div class="col-md-2">
+                    <input type="date" name="ToDate" value="@filter.ToDate?.ToString("yyyy-MM-dd")" class="form-control" />
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search me-1"></i>Lọc</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Status Quick Filter Tabs -->
+<div class="d-flex gap-2 mb-3 flex-wrap">
+    <a href="/manage/orders/index" class="btn btn-sm @(filter.Status == null ? "btn-primary" : "btn-outline-secondary")">Tất cả</a>
+    <a href="/manage/orders/index?Status=0" class="btn btn-sm @(filter.Status.HasValue && filter.Status.Value == DiemLanh.Domain.Enums.OrderStatus.PendingConfirmation ? "btn-warning" : "btn-outline-warning")">Chờ xác nhận</a>
+    <a href="/manage/orders/index?Status=1" class="btn btn-sm @(filter.Status.HasValue && filter.Status.Value == DiemLanh.Domain.Enums.OrderStatus.Confirmed ? "btn-info" : "btn-outline-info")">Đã xác nhận</a>
+    <a href="/manage/orders/index?Status=2" class="btn btn-sm btn-outline-primary">Chuẩn bị</a>
+    <a href="/manage/orders/index?Status=3" class="btn btn-sm btn-outline-primary">Đang giao</a>
+    <a href="/manage/orders/index?Status=6" class="btn btn-sm btn-outline-success">Hoàn thành</a>
+    <a href="/manage/orders/index?Status=7" class="btn btn-sm btn-outline-danger">Đã hủy</a>
+</div>
+
+<!-- Orders Table -->
+<div class="card">
+    <div class="card-body p-0">
+        @if (!Model.Items.Any())
+        {
+            <div class="text-center text-muted py-5">
+                <i class="bi bi-bag-x fs-1 d-block mb-3"></i>
+                <p>Không có đơn hàng nào</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Mã đơn</th>
+                            <th>Khách hàng</th>
+                            <th>Số SP</th>
+                            <th>Tổng tiền</th>
+                            <th>Trạng thái</th>
+                            <th>Ngày tạo</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var order in Model.Items)
+                        {
+                            <tr>
+                                <td>
+                                    <a href="/manage/orders/detail/@order.Id" class="fw-semibold text-decoration-none">
+                                        #@order.OrderCode
+                                    </a>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold">@order.CustomerName</div>
+                                    <small class="text-muted">@order.CustomerPhone</small>
+                                </td>
+                                <td><span class="badge bg-secondary-subtle text-secondary">@order.ItemCount SP</span></td>
+                                <td class="fw-bold">@order.TotalAmount.ToString("N0")đ</td>
+                                <td>
+                                    @{
+                                        var statusClass = order.Status switch
+                                        {
+                                            DiemLanh.Domain.Enums.OrderStatus.PendingConfirmation => "warning",
+                                            DiemLanh.Domain.Enums.OrderStatus.Confirmed => "info",
+                                            DiemLanh.Domain.Enums.OrderStatus.Completed => "success",
+                                            DiemLanh.Domain.Enums.OrderStatus.Cancelled => "danger",
+                                            DiemLanh.Domain.Enums.OrderStatus.Rejected => "danger",
+                                            _ => "primary"
+                                        };
+                                    }
+                                    <span class="badge bg-@statusClass-subtle text-@statusClass">@order.StatusDisplay</span>
+                                </td>
+                                <td class="text-muted small">@order.CreatedAt.AddHours(7).ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>
+                                    <a href="/manage/orders/detail/@order.Id" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            @if (Model.TotalPages > 1)
+            {
+                <div class="card-footer">
+                    <nav>
+                        <ul class="pagination pagination-sm justify-content-center mb-0">
+                            @if (Model.HasPreviousPage)
+                            {
+                                <li class="page-item"><a class="page-link" href="?Page=@(Model.Page-1)"><i class="bi bi-chevron-left"></i></a></li>
+                            }
+                            @for (int p = Math.Max(1, Model.Page - 2); p <= Math.Min(Model.TotalPages, Model.Page + 2); p++)
+                            {
+                                <li class="page-item @(p == Model.Page ? "active" : "")"><a class="page-link" href="?Page=@p">@p</a></li>
+                            }
+                            @if (Model.HasNextPage)
+                            {
+                                <li class="page-item"><a class="page-link" href="?Page=@(Model.Page+1)"><i class="bi bi-chevron-right"></i></a></li>
+                            }
+                        </ul>
+                    </nav>
+                </div>
+            }
+        }
+    </div>
+</div>

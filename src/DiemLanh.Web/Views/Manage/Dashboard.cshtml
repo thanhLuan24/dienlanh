@@ -1,0 +1,268 @@
+@model DiemLanh.Application.DTOs.Dashboard.StoreDashboardDto
+@{
+    ViewData["Title"] = "Dashboard";
+    ViewData["ActivePage"] = "Dashboard";
+    Layout = "_StoreLayout";
+}
+
+<!-- KPI Cards Row -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(59,130,246,.1);color:#3b82f6">
+                <i class="bi bi-bag-check"></i>
+            </div>
+            <div class="stat-value">@Model.TotalOrders</div>
+            <div class="stat-label">Tổng đơn hàng</div>
+            <div class="stat-change up"><i class="bi bi-arrow-up-short"></i> @Model.TodayOrders đơn hôm nay</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(16,185,129,.1);color:#10b981">
+                <i class="bi bi-currency-dollar"></i>
+            </div>
+            <div class="stat-value" style="font-size:1.4rem">@Model.MonthRevenue.ToString("N0")đ</div>
+            <div class="stat-label">Doanh thu tháng này</div>
+            <div class="stat-change up"><i class="bi bi-arrow-up-short"></i> @Model.TodayRevenue.ToString("N0")đ hôm nay</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(245,158,11,.1);color:#f59e0b">
+                <i class="bi bi-clock-history"></i>
+            </div>
+            <div class="stat-value">@Model.PendingOrders</div>
+            <div class="stat-label">Đơn chờ xác nhận</div>
+            <div class="stat-change"><i class="bi bi-arrow-right-short"></i> @Model.ProcessingOrders đang xử lý</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(239,68,68,.1);color:#ef4444">
+                <i class="bi bi-tools"></i>
+            </div>
+            <div class="stat-value">@Model.TodayInstallations</div>
+            <div class="stat-label">Lắp đặt hôm nay</div>
+            <div class="stat-change"><i class="bi bi-wrench-adjustable"></i> @Model.TodayRepairs sửa chữa hôm nay</div>
+        </div>
+    </div>
+</div>
+
+<!-- Secondary Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-4">
+        <div class="card border-0 shadow-sm text-center py-3">
+            <div class="text-warning fs-4 mb-1"><i class="bi bi-star-fill"></i></div>
+            <div class="fw-bold fs-5">@Model.AverageRating.ToString("F1")</div>
+            <small class="text-muted">@Model.TotalReviews đánh giá</small>
+        </div>
+    </div>
+    <div class="col-4">
+        <div class="card border-0 shadow-sm text-center py-3">
+            <div class="text-primary fs-4 mb-1"><i class="bi bi-box-seam"></i></div>
+            <div class="fw-bold fs-5">@Model.TotalProducts</div>
+            <small class="text-muted">@Model.LowStockProducts sắp hết hàng</small>
+        </div>
+    </div>
+    <div class="col-4">
+        <div class="card border-0 shadow-sm text-center py-3">
+            <div class="text-danger fs-4 mb-1"><i class="bi bi-wrench-adjustable"></i></div>
+            <div class="fw-bold fs-5">@Model.PendingRepairs</div>
+            <small class="text-muted">Sửa chữa chờ tiếp nhận</small>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Revenue Chart -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-bar-chart-line me-2 text-primary"></i>Doanh thu 7 ngày gần nhất</span>
+                <a href="/manage/statistics" class="btn btn-sm btn-outline-primary">Xem chi tiết</a>
+            </div>
+            <div class="card-body">
+                <canvas id="revenueChart" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Status Pie -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-pie-chart me-2 text-primary"></i>Trạng thái đơn hàng</div>
+            <div class="card-body">
+                <canvas id="statusChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upcoming Installations -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-calendar-check me-2 text-success"></i>Lịch lắp đặt sắp tới</span>
+                <a href="/manage/installations/index" class="btn btn-sm btn-outline-success">Xem tất cả</a>
+            </div>
+            <div class="card-body p-0">
+                @if (Model.UpcomingInstallations.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead><tr><th>Ngày/Giờ</th><th>Khách hàng</th><th>Kỹ thuật viên</th></tr></thead>
+                            <tbody>
+                                @foreach (var item in Model.UpcomingInstallations)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="fw-semibold">@item.ScheduledDate.ToString("dd/MM")</div>
+                                            <small class="text-muted">@item.ScheduledTime.ToString("HH:mm")</small>
+                                        </td>
+                                        <td>
+                                            <div>@item.CustomerName</div>
+                                            <small class="text-muted">@item.CustomerPhone</small>
+                                        </td>
+                                        <td><span class="badge bg-primary-subtle text-primary">@(item.TechnicianName ?? "Chưa phân")</span></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center text-muted py-4"><i class="bi bi-calendar-x fs-2 d-block mb-2"></i>Không có lịch lắp đặt</div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Orders -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-clock-history me-2 text-warning"></i>Đơn hàng gần đây</span>
+                <a href="/manage/orders/index" class="btn btn-sm btn-outline-warning">Xem tất cả</a>
+            </div>
+            <div class="card-body p-0">
+                @if (Model.RecentOrders.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead><tr><th>Mã đơn</th><th>Khách hàng</th><th>Số tiền</th><th>Trạng thái</th></tr></thead>
+                            <tbody>
+                                @foreach (var order in Model.RecentOrders)
+                                {
+                                    <tr>
+                                        <td><a href="/manage/orders/detail/@order.Id" class="fw-semibold text-decoration-none">#@order.OrderCode</a></td>
+                                        <td>@order.CustomerName</td>
+                                        <td class="fw-semibold">@order.TotalAmount.ToString("N0")đ</td>
+                                        <td><span class="badge bg-@order.StatusColor-subtle text-@order.StatusColor">@order.Status</span></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center text-muted py-4"><i class="bi bi-bag-x fs-2 d-block mb-2"></i>Chưa có đơn hàng</div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Products -->
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-trophy me-2 text-warning"></i>Sản phẩm bán chạy</div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead><tr><th>#</th><th>Sản phẩm</th><th>Đã bán</th><th>Doanh thu</th></tr></thead>
+                        <tbody>
+                            @{ int rank = 1; }
+                            @foreach (var p in Model.TopProducts)
+                            {
+                                <tr>
+                                    <td>
+                                        @if (rank <= 3)
+                                        {
+                                            <span class="badge" style="background:@(rank==1?"#f59e0b":rank==2?"#94a3b8":"#a16207")">@rank</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">@rank</span>
+                                        }
+                                    </td>
+                                    <td class="fw-semibold">@p.ProductName</td>
+                                    <td><span class="badge bg-primary-subtle text-primary">@p.SoldCount sản phẩm</span></td>
+                                    <td class="fw-bold text-success">@p.Revenue.ToString("N0")đ</td>
+                                </tr>
+                                rank++;
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+const revenueData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RevenueLast7Days));
+const statusData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.OrderStatusCounts));
+
+// Revenue Chart
+new Chart(document.getElementById('revenueChart'), {
+    type: 'bar',
+    data: {
+        labels: revenueData.map(d => d.date),
+        datasets: [{
+            label: 'Doanh thu (VNĐ)',
+            data: revenueData.map(d => d.revenue),
+            backgroundColor: 'rgba(59,130,246,0.15)',
+            borderColor: '#3b82f6',
+            borderWidth: 2,
+            borderRadius: 6,
+            borderSkipped: false,
+        }, {
+            label: 'Số đơn',
+            data: revenueData.map(d => d.orderCount * 100000),
+            type: 'line',
+            borderColor: '#06b6d4',
+            borderWidth: 2,
+            tension: 0.4,
+            pointBackgroundColor: '#06b6d4',
+            yAxisID: 'y1'
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { position: 'top' } },
+        scales: {
+            y: { ticks: { callback: v => v.toLocaleString('vi-VN') + 'đ' } },
+            y1: { position: 'right', display: false }
+        }
+    }
+});
+
+// Status Pie Chart
+if (statusData.length > 0) {
+    new Chart(document.getElementById('statusChart'), {
+        type: 'doughnut',
+        data: {
+            labels: statusData.map(s => s.status),
+            datasets: [{
+                data: statusData.map(s => s.count),
+                backgroundColor: ['#f59e0b','#3b82f6','#8b5cf6','#06b6d4','#10b981','#ef4444'],
+                borderWidth: 0
+            }]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } }, cutout: '65%' }
+    });
+}
+</script>
+}

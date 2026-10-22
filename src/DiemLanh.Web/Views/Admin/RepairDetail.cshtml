@@ -1,0 +1,88 @@
+@model DiemLanh.Application.DTOs.Repair.RepairRequestDto
+@using DiemLanh.Domain.Enums
+@{
+    ViewData["Title"] = $"Phiếu Sửa chữa #{Model.Id}";
+    Layout = "~/Views/Admin/_AdminLayout.cshtml";
+    var technicians = ViewBag.Technicians as IEnumerable<TechnicianDto> ?? Enumerable.Empty<TechnicianDto>();
+}
+
+<div style="margin-bottom:1.5rem">
+    <a href="/admin/repairs" style="color:var(--grey-mid);font-size:.8rem;text-decoration:none"><i class="bi bi-arrow-left"></i> Danh sách sửa chữa</a>
+    <h2 style="font-weight:800;margin:.25rem 0 0">Phiếu Sửa chữa #SR-@Model.Id</h2>
+    <div style="color:var(--grey);font-size:.85rem">Cửa hàng phụ trách: <strong>@Model.StoreName</strong></div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 380px;gap:1.5rem">
+    <!-- Info -->
+    <div class="adm-form-section">
+        <div class="adm-form-section-title">THÔNG TIN KHÁCH HÀNG & THIẾT BỊ</div>
+        
+        <table class="adm-table" style="margin-bottom:1.5rem">
+            <tr><th style="width:140px">Khách hàng:</th><td><strong>@Model.CustomerName</strong> (@Model.CustomerPhone)</td></tr>
+            <tr><th>Địa chỉ:</th><td>@Model.CustomerAddress</td></tr>
+            <tr><th>Thiết bị:</th><td><strong>@Model.DeviceType</strong> - @Model.Brand @(string.IsNullOrEmpty(Model.Model) ? "" : $"({Model.Model})")</td></tr>
+            <tr><th>Mô tả lỗi:</th><td style="color:#D97706;font-weight:600">@Model.Symptoms</td></tr>
+            <tr><th>Thời gian gửi:</th><td>@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td></tr>
+        </table>
+
+        @if (!string.IsNullOrEmpty(Model.DiagnosisNote))
+        {
+            <div class="adm-form-section-title">CHẨN ĐOÁN LỖI</div>
+            <div style="background:var(--charcoal);padding:1rem;border-radius:6px;margin-bottom:1.5rem">@Model.DiagnosisNote</div>
+        }
+    </div>
+
+    <!-- Update Form -->
+    <form method="post" action="/admin/repairs/@Model.Id/update-status" class="adm-form-section">
+        @Html.AntiForgeryToken()
+        <div class="adm-form-section-title">CẬP NHẬT TIẾN ĐỘ & PHÂN CÔNG (ADMIN)</div>
+
+        <div class="adm-field">
+            <label class="adm-label">Trạng Thái Sửa Chữa *</label>
+            <select name="NewStatus" class="adm-input" required>
+                <option value="PendingReceive" selected="@(Model.Status == RepairStatus.PendingReceive)">1. Chờ tiếp nhận</option>
+                <option value="Checking" selected="@(Model.Status == RepairStatus.Checking)">1. Đang kiểm tra / Báo giá</option>
+                <option value="Scheduled" selected="@(Model.Status == RepairStatus.Scheduled)">2. Đã hẹn lịch</option>
+                <option value="Repairing" selected="@(Model.Status == RepairStatus.Repairing)">2. Đang sửa chữa</option>
+                <option value="Completed" selected="@(Model.Status == RepairStatus.Completed)">3. Hoàn thành & Bảo hành</option>
+                <option value="CannotRepair" selected="@(Model.Status == RepairStatus.CannotRepair)">🛑 Không thể sửa / Đóng</option>
+            </select>
+        </div>
+
+        <div class="adm-field">
+            <label class="adm-label">Phân Công Kỹ Thuật Viên</label>
+            <select name="TechnicianId" class="adm-input">
+                <option value="">-- Chưa phân công --</option>
+                @foreach (var t in technicians)
+                {
+                    <option value="@t.Id" selected="@(Model.TechnicianId == t.Id)">@t.Name (@(string.IsNullOrEmpty(t.Specialty) ? "KTV" : t.Specialty))</option>
+                }
+            </select>
+        </div>
+
+        <div class="adm-field">
+            <label class="adm-label">Thời Gian Hẹn Đến Sửa</label>
+            <input type="datetime-local" name="ScheduledAt" value="@(Model.ScheduledAt?.ToString("yyyy-MM-ddTHH:mm"))" class="adm-input" />
+        </div>
+
+        <div class="adm-input-2col">
+            <div class="adm-field">
+                <label class="adm-label">Chi Phí Ước Tính (đ)</label>
+                <input type="number" name="EstimatedCost" value="@Model.EstimatedCost" class="adm-input" step="10000" />
+            </div>
+            <div class="adm-field">
+                <label class="adm-label">Chi Phí Thực Tế (đ)</label>
+                <input type="number" name="ActualCost" value="@Model.ActualCost" class="adm-input" step="10000" />
+            </div>
+        </div>
+
+        <div class="adm-field">
+            <label class="adm-label">Ghi Chú Chẩn Đoán / Xử Lý</label>
+            <textarea name="DiagnosisNote" rows="3" class="adm-input">@Model.DiagnosisNote</textarea>
+        </div>
+
+        <button type="submit" class="btn-adm btn-adm-primary w-100" style="margin-top:1rem">
+            <i class="bi bi-check-lg"></i> Lưu Thay Đổi Phiếu
+        </button>
+    </form>
+</div>

@@ -1,0 +1,178 @@
+@model DiemLanh.Application.Common.PagedResult<DiemLanh.Application.DTOs.Admin.AdminUserListDto>
+@{
+    ViewData["Title"] = "Quản lý Người dùng";
+    ViewData["AdminTitle"] = "Người dùng hệ thống";
+    Layout = "~/Views/Admin/_AdminLayout.cshtml";
+    var allRoles = new[] { "SuperAdmin", "StoreOwner", "StoreStaff", "Technician", "Customer" };
+    var stores = ViewBag.Stores as List<DiemLanh.Application.DTOs.Admin.StoreSimpleDto> ?? new();
+}
+
+@if (TempData["Success"] != null)
+{
+    <div style="background:#D1FAE5;border:1px solid #6EE7B7;color:#065F46;padding:10px 16px;border-radius:8px;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem">
+        <i class="bi bi-check-circle-fill"></i> @TempData["Success"]
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div style="background:#FEE2E2;border:1px solid #FCA5A5;color:#991B1B;padding:10px 16px;border-radius:8px;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem">
+        <i class="bi bi-exclamation-circle-fill"></i> @TempData["Error"]
+    </div>
+}
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
+    <div>
+        <div style="font-family:var(--font-mono);font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--grey-mid)">
+            Hiển thị @Model.Items.Count / @Model.TotalCount tài khoản
+        </div>
+    </div>
+</div>
+
+<!-- Filter Bar -->
+<form method="get" action="/admin/users" class="adm-filter-bar">
+    <div class="adm-search">
+        <i class="bi bi-search"></i>
+        <input type="text" name="keyword" value="@ViewBag.Keyword" placeholder="Tìm theo email, tên..."/>
+    </div>
+    <select name="role" onchange="this.form.submit()" style="background:var(--charcoal);border:1px solid var(--grey-dark);color:var(--black);padding:8px 12px;border-radius:6px;font-size:.85rem;outline:none">
+        <option value="">-- Tất cả vai trò --</option>
+        @foreach (var r in allRoles)
+        {
+            <option value="@r" selected="@(ViewBag.Role == r)">@r</option>
+        }
+    </select>
+    <button type="submit" class="btn-adm btn-adm-primary"><i class="bi bi-search"></i> Tìm</button>
+    <a href="/admin/users" class="btn-adm btn-adm-outline">Xóa bộ lọc</a>
+</form>
+
+<div class="adm-table-wrap">
+    <table class="adm-table">
+        <thead>
+            <tr>
+                <th>Người dùng</th>
+                <th>Email</th>
+                <th>Vai trò</th>
+                <th>Trạng thái</th>
+                <th>Ngày tham gia</th>
+                <th>Đăng nhập lần cuối</th>
+                <th style="text-align:right">Hành động</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var u in Model.Items)
+            {
+                <tr>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:10px">
+                            <div style="width:36px;height:36px;background:@(u.Role=="SuperAdmin"?"#E11D48":"var(--neon)");border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8rem;color:#fff;flex-shrink:0">
+                                @u.FullName.Substring(0,1).ToUpper()
+                            </div>
+                            <div>
+                                <div style="font-weight:600">@u.FullName</div>
+                                @if (u.StoreName != null)
+                                {
+                                    <div style="font-size:.72rem;color:var(--grey-mid)"><i class="bi bi-shop me-1"></i>@u.StoreName</div>
+                                }
+                            </div>
+                        </div>
+                    </td>
+                    <td style="font-size:.82rem;color:var(--grey)">@u.Email</td>
+                    <td>
+                        <span class="badge-pill @(u.Role=="SuperAdmin"?"badge-danger":u.Role=="StoreOwner"?"badge-info":u.Role=="StoreStaff"?"badge-info":"badge-grey")">
+                            @u.Role
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge-pill @(u.IsActive?"badge-success":"badge-danger")">
+                            @(u.IsActive ? "Hoạt động" : "Đã khóa")
+                        </span>
+                    </td>
+                    <td style="font-size:.78rem;color:var(--grey-mid)">@u.CreatedAt.ToString("dd/MM/yyyy")</td>
+                    <td style="font-size:.78rem;color:var(--grey-mid)">
+                        @(u.LastLoginAt.HasValue ? u.LastLoginAt.Value.ToString("dd/MM HH:mm") : "Chưa đăng nhập")
+                    </td>
+                    <td>
+                        <div style="display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap">
+                            <!-- Toggle Status -->
+                            <form method="post" action="/admin/users/@u.Id/toggle-status" style="margin:0">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn-adm btn-adm-sm @(u.IsActive?"btn-adm-danger":"btn-adm-outline")"
+                                        onclick="return confirm('@(u.IsActive?"Khóa tài khoản này?":"Kích hoạt tài khoản này?")')">
+                                    <i class="bi @(u.IsActive?"bi-lock":"bi-unlock")"></i>
+                                    @(u.IsActive ? "Khóa" : "Mở khóa")
+                                </button>
+                            </form>
+                            <!-- Change Role -->
+                            <form method="post" action="/admin/users/@u.Id/change-role" style="margin:0;display:flex;gap:4px;align-items:center">
+                                @Html.AntiForgeryToken()
+                                @{
+                                    // Build role select – avoids Razor tag-helper "selected=False" bug
+                                    var roleSelectHtml = "<select name='newRole' onchange='toggleStoreSelect(this)' style='background:var(--charcoal);border:1px solid var(--grey-dark);color:var(--black);padding:4px 8px;border-radius:5px;font-size:.75rem;outline:none'>";
+                                    foreach (var r in allRoles)
+                                        roleSelectHtml += $"<option value='{r}'{(u.Role == r ? " selected" : "")}>{r}</option>";
+                                    roleSelectHtml += "</select>";
+
+                                    var storeSelectHtml = $"<select name='storeId' class='store-select-field' style='background:var(--charcoal);border:1px solid var(--grey-dark);color:var(--black);padding:4px 8px;border-radius:5px;font-size:.75rem;outline:none;display:{((u.Role=="StoreOwner"||u.Role=="StoreStaff"||u.Role=="Technician") ? "block" : "none")}'><option value=''>-- Ch\u1ecdn c\u1eeda h\u00e0ng --</option>";
+                                    foreach (var s in stores)
+                                        storeSelectHtml += $"<option value='{s.Id}'{(u.StoreId == s.Id ? " selected" : "")}>{s.Name}</option>";
+                                    storeSelectHtml += "</select>";
+                                }
+                                @Html.Raw(roleSelectHtml)
+                                @Html.Raw(storeSelectHtml)
+                                <button type="submit" class="btn-adm btn-adm-sm btn-adm-primary" title="Lưu thay đổi vai trò" onclick="return confirm('Thay đổi vai trò tài khoản này?')">
+                                    <i class="bi bi-check2"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            }
+            @if (!Model.Items.Any())
+            {
+                <tr><td colspan="7" style="text-align:center;color:var(--grey-mid);padding:3rem">
+                    <i class="bi bi-people" style="font-size:2rem;display:block;margin-bottom:.5rem"></i>
+                    Không tìm thấy người dùng nào
+                </td></tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+@if (Model.TotalPages > 1)
+{
+    <div class="adm-pagination">
+        @if (Model.HasPreviousPage)
+        {
+            <a href="/admin/users?page=@(Model.Page-1)&keyword=@ViewBag.Keyword&role=@ViewBag.Role">
+                <i class="bi bi-chevron-left"></i>
+            </a>
+        }
+        @for (int i = Math.Max(1, Model.Page - 2); i <= Math.Min(Model.TotalPages, Model.Page + 2); i++)
+        {
+            <a href="/admin/users?page=@i&keyword=@ViewBag.Keyword&role=@ViewBag.Role" class="@(i==Model.Page?"active":"")">@i</a>
+        }
+        @if (Model.HasNextPage)
+        {
+            <a href="/admin/users?page=@(Model.Page+1)&keyword=@ViewBag.Keyword&role=@ViewBag.Role">
+                <i class="bi bi-chevron-right"></i>
+            </a>
+        }
+    </div>
+}
+
+@section Scripts {
+<script>
+function toggleStoreSelect(selectEl) {
+    const form = selectEl.closest('form');
+    const storeSelect = form.querySelector('.store-select-field');
+    const val = selectEl.value;
+    if (val === 'StoreOwner' || val === 'StoreStaff' || val === 'Technician') {
+        storeSelect.style.display = 'block';
+    } else {
+        storeSelect.style.display = 'none';
+        storeSelect.value = '';
+    }
+}
+</script>
+}

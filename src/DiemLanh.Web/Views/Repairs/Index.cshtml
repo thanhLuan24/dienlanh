@@ -1,0 +1,189 @@
+@model DiemLanh.Application.Common.PagedResult<DiemLanh.Application.DTOs.Repair.RepairRequestDto>
+@{
+    ViewData["Title"] = "Quản lý Sửa chữa";
+    ViewData["ActivePage"] = "Repairs";
+    Layout = "_StoreLayout";
+    var filter = ViewBag.Filter as DiemLanh.Application.DTOs.Repair.RepairFilterDto ?? new();
+    var technicians = ViewBag.Technicians as IEnumerable<TechnicianDto> ?? Enumerable.Empty<TechnicianDto>();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1 fw-bold">Quản lý Sửa chữa</h4>
+        <p class="text-muted mb-0">Tổng cộng @Model.TotalCount yêu cầu</p>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" action="/manage/repairs/index">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <input type="text" name="Keyword" value="@filter.Keyword" class="form-control" placeholder="Tên khách, SĐT, thiết bị..." />
+                </div>
+                <div class="col-md-2">
+                    @{
+                        var repairStatusOpts = "<select name='Status' class='form-select'><option value=''>-- Trạng thái --</option>";
+                        var repairStatuses = new[] { (0,"Chờ tiếp nhận"),(1,"Đang kiểm tra"),(2,"Đã hẹn lịch"),(3,"Đang sửa"),(4,"Hoàn thành"),(5,"Không thể sửa") };
+                        int? rsv = filter.Status.HasValue ? (int)filter.Status.Value : (int?)null;
+                        foreach (var (rv, rl) in repairStatuses)
+                            repairStatusOpts += $"<option value='{rv}'{(rsv == rv ? " selected" : "")}>{rl}</option>";
+                        repairStatusOpts += "</select>";
+                    }
+                    @Html.Raw(repairStatusOpts)
+                </div>
+                <div class="col-md-2">
+                    @{
+                        var techOpts = "<select name='TechnicianId' class='form-select'><option value=''>-- Kỹ thuật viên --</option>";
+                        foreach (var t in technicians)
+                            techOpts += $"<option value='{t.Id}'{(filter.TechnicianId == t.Id ? " selected" : "")}>{t.Name}</option>";
+                        techOpts += "</select>";
+                    }
+                    @Html.Raw(techOpts)
+                </div>
+                <div class="col-md-2">
+                    <input type="date" name="FromDate" value="@filter.FromDate?.ToString("yyyy-MM-dd")" class="form-control" />
+                </div>
+                <div class="col-md-3">
+                    <div class="input-group">
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i></button>
+                        <a href="/manage/repairs/index" class="btn btn-outline-secondary">Xóa lọc</a>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Status Tabs -->
+<div class="d-flex gap-2 mb-3 flex-wrap">
+    <a href="/manage/repairs/index" class="btn btn-sm @(filter.Status == null ? "btn-primary" : "btn-outline-secondary")">Tất cả</a>
+    <a href="/manage/repairs/index?Status=0" class="btn btn-sm btn-outline-warning">Chờ tiếp nhận</a>
+    <a href="/manage/repairs/index?Status=1" class="btn btn-sm btn-outline-info">Đang kiểm tra</a>
+    <a href="/manage/repairs/index?Status=3" class="btn btn-sm btn-outline-primary">Đang sửa</a>
+    <a href="/manage/repairs/index?Status=4" class="btn btn-sm btn-outline-success">Hoàn thành</a>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        @if (!Model.Items.Any())
+        {
+            <div class="text-center text-muted py-5">
+                <i class="bi bi-wrench-adjustable fs-1 d-block mb-3"></i>
+                <p>Không có yêu cầu sửa chữa nào</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Khách hàng</th>
+                            <th>Thiết bị</th>
+                            <th>Kỹ thuật viên</th>
+                            <th>Lịch hẹn</th>
+                            <th>Chi phí</th>
+                            <th>Trạng thái</th>
+                            <th>Ngày tạo</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var r in Model.Items)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold">@r.CustomerName</div>
+                                    <small class="text-muted">@r.CustomerPhone</small>
+                                </td>
+                                <td>
+                                    <div>@r.DeviceType</div>
+                                    <small class="text-muted">@r.Brand @r.Model</small>
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(r.TechnicianName))
+                                    {
+                                        <span class="badge bg-primary-subtle text-primary">@r.TechnicianName</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">Chưa phân</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (r.ScheduledAt.HasValue)
+                                    {
+                                        <div>@r.ScheduledAt.Value.AddHours(7).ToString("dd/MM HH:mm")</div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">Chưa hẹn</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (r.ActualCost.HasValue)
+                                    {
+                                        <span class="fw-bold text-success">@r.ActualCost.Value.ToString("N0")đ</span>
+                                    }
+                                    else if (r.EstimatedCost.HasValue)
+                                    {
+                                        <span class="text-muted">~@r.EstimatedCost.Value.ToString("N0")đ</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">--</span>
+                                    }
+                                </td>
+                                <td>
+                                    @{
+                                        var cls = r.Status switch
+                                        {
+                                            DiemLanh.Domain.Enums.RepairStatus.PendingReceive => "warning",
+                                            DiemLanh.Domain.Enums.RepairStatus.Checking => "info",
+                                            DiemLanh.Domain.Enums.RepairStatus.Scheduled => "primary",
+                                            DiemLanh.Domain.Enums.RepairStatus.Repairing => "info",
+                                            DiemLanh.Domain.Enums.RepairStatus.Completed => "success",
+                                            DiemLanh.Domain.Enums.RepairStatus.CannotRepair => "danger",
+                                            _ => "secondary"
+                                        };
+                                    }
+                                    <span class="badge bg-@cls-subtle text-@cls">@r.StatusDisplay</span>
+                                </td>
+                                <td class="text-muted small">@r.CreatedAt.AddHours(7).ToString("dd/MM/yyyy")</td>
+                                <td>
+                                    <a href="/manage/repairs/detail/@r.Id" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (Model.TotalPages > 1)
+            {
+                <div class="card-footer">
+                    <nav>
+                        <ul class="pagination pagination-sm justify-content-center mb-0">
+                            @if (Model.HasPreviousPage)
+                            {
+                                <li class="page-item"><a class="page-link" href="?Page=@(Model.Page-1)"><i class="bi bi-chevron-left"></i></a></li>
+                            }
+                            @for (int p = Math.Max(1, Model.Page - 2); p <= Math.Min(Model.TotalPages, Model.Page + 2); p++)
+                            {
+                                <li class="page-item @(p == Model.Page ? "active" : "")"><a class="page-link" href="?Page=@p">@p</a></li>
+                            }
+                            @if (Model.HasNextPage)
+                            {
+                                <li class="page-item"><a class="page-link" href="?Page=@(Model.Page+1)"><i class="bi bi-chevron-right"></i></a></li>
+                            }
+                        </ul>
+                    </nav>
+                </div>
+            }
+        }
+    </div>
+</div>

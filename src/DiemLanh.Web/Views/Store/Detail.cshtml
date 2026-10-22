@@ -1,0 +1,369 @@
+@model DiemLanh.Application.DTOs.Store.StoreDto
+@{
+    ViewData["Title"] = Model.Name;
+    var productsResult = ViewBag.Products as DiemLanh.Application.Common.PagedResult<DiemLanh.Application.DTOs.Product.ProductListDto>;
+    var products = productsResult?.Items ?? new List<DiemLanh.Application.DTOs.Product.ProductListDto>();
+}
+
+<!-- Hero Cover Banner Section -->
+<section style="background: var(--charcoal); position: relative; border-bottom: 1px solid var(--grey-dark);">
+    <!-- Cover Image -->
+    <div style="height: 260px; overflow: hidden; position: relative;">
+        @if (!string.IsNullOrEmpty(Model.CoverImageUrl))
+        {
+            <img src="@Model.CoverImageUrl" style="width: 100%; height: 100%; object-fit: cover;" alt="Cover @Model.Name" />
+        }
+        else
+        {
+            <div style="width: 100%; height: 100%; background: linear-gradient(135deg, rgba(13,148,136,0.1) 0%, rgba(17,17,17,0.05) 100%); display: flex; align-items: center; justify-content: center; position: relative;">
+                <div style="position: absolute; inset: 0; background-image: radial-gradient(var(--grey-mid) 1px, transparent 1px); background-size: 20px 20px; opacity: 0.1;"></div>
+            </div>
+        }
+        <div style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.3) 0%, transparent 100%);"></div>
+    </div>
+
+    <!-- Store Info Header Float -->
+    <div class="container" style="position: relative; margin-top: -50px; z-index: 10; padding-bottom: 2rem;">
+        <div style="display: flex; gap: 1.5rem; align-items: flex-end; flex-wrap: wrap;">
+            
+            <!-- Store Logo -->
+            <div style="width: 110px; height: 110px; border-radius: var(--radius-md); border: 4px solid var(--white); background: var(--white); box-shadow: var(--shadow-card); overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                @if (!string.IsNullOrEmpty(Model.LogoUrl))
+                {
+                    <img src="@Model.LogoUrl" style="width: 100%; height: 100%; object-fit: cover;" alt="Logo @Model.Name" />
+                }
+                else
+                {
+                    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: var(--neon); color: var(--white); font-weight: 700; font-size: 2.2rem; font-family: var(--font-main);">
+                        @Model.Name.Substring(0, 1).ToUpper()
+                    </div>
+                }
+            </div>
+
+            <!-- Store Details Title -->
+            <div style="flex-grow: 1; padding-bottom: 0.25rem;">
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 0.25rem;">
+                    <h1 class="display-md" style="margin: 0; color: var(--white); text-shadow: 0 2px 4px rgba(0,0,0,0.25); line-height: 1.1;">@Model.Name</h1>
+                    <span style="display: inline-flex; align-items: center; gap: 4px; background: var(--neon); color: var(--white); font-family: var(--font-mono); font-size: 0.65rem; font-weight: 600; padding: 3px 8px; border-radius: 100px; text-transform: uppercase; letter-spacing: 0.05em; box-shadow: 0 2px 8px rgba(13,148,136,0.3);">
+                        <i class="bi bi-patch-check-fill"></i> Đối tác xác minh
+                    </span>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-top: 0.5rem;">
+                    <!-- Rating info -->
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <div style="color: var(--accent-gold); display: inline-flex; gap: 2px;">
+                            @for (int i = 1; i <= 5; i++)
+                            {
+                                <i class="bi bi-star@(i <= (Model.AverageRating ?? 0) ? "-fill" : i - 0.5 <= (Model.AverageRating ?? 0) ? "-half" : "")" style="font-size: 0.85rem;"></i>
+                            }
+                        </div>
+                        <span style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--white); text-shadow: 0 1px 2px rgba(0,0,0,0.5); font-weight: 500;">
+                            @Model.AverageRating?.ToString("F1") (@Model.TotalReviews đánh giá)
+                        </span>
+                    </div>
+
+                    <!-- Joined date -->
+                    <div style="font-size: 0.8rem; color: var(--grey-dark); text-shadow: 0 1px 2px rgba(0,0,0,0.5); display: flex; align-items: center; gap: 4px;">
+                        <i class="bi bi-calendar3"></i>
+                        <span>Tham gia: @Model.JoinedAt.ToString("dd/MM/yyyy")</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action buttons -->
+            <div style="display: flex; gap: 0.5rem; padding-bottom: 0.25rem; flex-wrap: wrap;">
+                <a href="/repairs/book?storeId=@Model.Id" class="btn btn-neon" style="padding: 10px 18px; font-size: 0.8rem;">
+                    <i class="bi bi-tools"></i> Đặt lịch sửa chữa
+                </a>
+                <a href="tel:@Model.PhoneNumber" class="btn btn-outline" style="background: var(--white); padding: 10px 18px; font-size: 0.8rem;">
+                    <i class="bi bi-telephone-fill"></i> Gọi điện
+                </a>
+                @if (!string.IsNullOrEmpty(Model.GoogleMapsUrl))
+                {
+                    <a href="@Model.GoogleMapsUrl" target="_blank" class="btn btn-outline" style="background: var(--white); padding: 10px 18px; font-size: 0.8rem;">
+                        <i class="bi bi-map"></i> Bản đồ
+                    </a>
+                }
+            </div>
+            
+        </div>
+    </div>
+</section>
+
+<!-- Content Area -->
+<section class="section-pad-sm" style="background: var(--white);">
+    <div class="container">
+        <div style="display: grid; grid-template-columns: 320px 1fr; gap: 2.5rem; align-items: start;">
+            
+            <!-- Store Details Left Column Info -->
+            <aside style="display: flex; flex-direction: column; gap: 1.5rem;">
+                
+                <!-- Basic Contact Info Widget -->
+                <div style="border: 1px solid var(--grey-dark); border-radius: var(--radius-md); padding: 1.25rem; background: var(--white);">
+                    <div class="label-mono" style="margin-bottom: 1rem; font-size: 0.7rem; color: var(--grey-mid); padding-bottom: 0.5rem; border-bottom: 1px solid var(--grey-dark);">Thông tin liên hệ</div>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 0.85rem; font-size: 0.85rem;">
+                        <div style="display: flex; gap: 10px; align-items: flex-start;">
+                            <i class="bi bi-geo-alt" style="color: var(--neon); font-size: 1rem; margin-top: 2px;"></i>
+                            <div>
+                                <span style="font-weight: 600; color: var(--black); display: block;">Địa chỉ chính</span>
+                                <span style="color: var(--grey);">@Model.Address?.FullAddress</span>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 10px; align-items: flex-start;">
+                            <i class="bi bi-telephone" style="color: var(--neon); font-size: 1rem; margin-top: 2px;"></i>
+                            <div>
+                                <span style="font-weight: 600; color: var(--black); display: block;">Điện thoại</span>
+                                <a href="tel:@Model.PhoneNumber" style="color: var(--neon); font-weight: 600;">@Model.PhoneNumber</a>
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(Model.Email))
+                        {
+                            <div style="display: flex; gap: 10px; align-items: flex-start;">
+                                <i class="bi bi-envelope" style="color: var(--neon); font-size: 1rem; margin-top: 2px;"></i>
+                                <div>
+                                    <span style="font-weight: 600; color: var(--black); display: block;">Email</span>
+                                    <a href="mailto:@Model.Email" style="color: var(--grey);">@Model.Email</a>
+                                </div>
+                            </div>
+                        }
+
+                        <div style="display: flex; gap: 10px; align-items: flex-start;">
+                            <i class="bi bi-clock" style="color: var(--neon); font-size: 1rem; margin-top: 2px;"></i>
+                            <div>
+                                <span style="font-weight: 600; color: var(--black); display: block;">Giờ hoạt động</span>
+                                <span style="color: var(--grey);">@Model.OpenTime.ToString("HH:mm") – @Model.CloseTime.ToString("HH:mm")</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Verified Brand Partners Widget -->
+                @if (Model.Brands.Any())
+                {
+                    <div style="border: 1px solid var(--grey-dark); border-radius: var(--radius-md); padding: 1.25rem; background: var(--white);">
+                        <div class="label-mono" style="margin-bottom: 1rem; font-size: 0.7rem; color: var(--grey-mid); padding-bottom: 0.5rem; border-bottom: 1px solid var(--grey-dark);">Đối tác thương hiệu</div>
+                        <div style="display: flex; flex-direction: column; gap: 0.65rem;">
+                            @foreach (var brand in Model.Brands)
+                            {
+                                <div style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: var(--charcoal); border-radius: var(--radius-sm); border: 1px solid var(--grey-dark);">
+                                    @if (!string.IsNullOrEmpty(brand.LogoUrl))
+                                    {
+                                        <img src="@brand.LogoUrl" style="width: 24px; height: 24px; object-fit: contain;" alt="@brand.BrandName" />
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-shield-check" style="color: var(--neon); font-size: 0.95rem;"></i>
+                                    }
+                                    <span style="font-size: 0.8rem; font-weight: 600; color: var(--black);">@brand.BrandName</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- Service Area Coverage Widget -->
+                @if (Model.ServiceAreas.Any())
+                {
+                    <div style="border: 1px solid var(--grey-dark); border-radius: var(--radius-md); padding: 1.25rem; background: var(--white);">
+                        <div class="label-mono" style="margin-bottom: 1rem; font-size: 0.7rem; color: var(--grey-mid); padding-bottom: 0.5rem; border-bottom: 1px solid var(--grey-dark);">Khu vực phục vụ</div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                            @foreach (var area in Model.ServiceAreas)
+                            {
+                                <span style="font-family: var(--font-mono); font-size: 0.65rem; color: var(--grey); background: var(--charcoal); border: 1px solid var(--grey-dark); padding: 3px 8px; border-radius: 4px;">
+                                    <i class="bi bi-geo-fill" style="color: var(--neon); margin-right: 2px;"></i>
+                                    @(!string.IsNullOrEmpty(area.District) ? $"{area.District}, {area.Province}" : area.Province)
+                                </span>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- Social Links & Web Button Group -->
+                @if (!string.IsNullOrEmpty(Model.Website) || !string.IsNullOrEmpty(Model.FanpageUrl))
+                {
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                        @if (!string.IsNullOrEmpty(Model.Website))
+                        {
+                            <a href="@Model.Website" target="_blank" class="btn btn-outline" style="padding: 10px; font-size: 0.75rem; justify-content: center;">
+                                <i class="bi bi-globe"></i> Website
+                            </a>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.FanpageUrl))
+                        {
+                            <a href="@Model.FanpageUrl" target="_blank" class="btn btn-outline" style="padding: 10px; font-size: 0.75rem; justify-content: center;">
+                                <i class="bi bi-facebook" style="color: #1877F2;"></i> Fanpage
+                            </a>
+                        }
+                    </div>
+                }
+
+            </aside>
+
+            <!-- Store Tabs Details Right Column Content -->
+            <div>
+                
+                <!-- Premium Tab Nav -->
+                <div style="display: flex; gap: 1.5rem; border-bottom: 1px solid var(--grey-dark); margin-bottom: 2rem;">
+                    <button class="tab-btn active" onclick="switchTab('products-tab')" id="products-tab-btn" 
+                            style="background: transparent; border: none; padding: 12px 6px; font-family: var(--font-main); font-size: 0.9rem; font-weight: 700; text-transform: uppercase; color: var(--neon); border-bottom: 3px solid var(--neon); cursor: pointer; transition: var(--transition);">
+                        Sản phẩm kinh doanh
+                    </button>
+                    <button class="tab-btn" onclick="switchTab('about-tab')" id="about-tab-btn"
+                            style="background: transparent; border: none; padding: 12px 6px; font-family: var(--font-main); font-size: 0.9rem; font-weight: 700; text-transform: uppercase; color: var(--grey-mid); border-bottom: 3px solid transparent; cursor: pointer; transition: var(--transition);">
+                        Giới thiệu cửa hàng
+                    </button>
+                    <button class="tab-btn" onclick="switchTab('policies-tab')" id="policies-tab-btn"
+                            style="background: transparent; border: none; padding: 12px 6px; font-family: var(--font-main); font-size: 0.9rem; font-weight: 700; text-transform: uppercase; color: var(--grey-mid); border-bottom: 3px solid transparent; cursor: pointer; transition: var(--transition);">
+                        Chính sách dịch vụ
+                    </button>
+                </div>
+
+                <!-- Tab 1: Products offered -->
+                <div class="tab-content" id="products-tab">
+                    
+                    @if (!products.Any())
+                    {
+                        <div style="text-align: center; padding: 4rem 2rem; border: 1px dashed var(--grey-dark); border-radius: var(--radius-md);">
+                            <i class="bi bi-box-seam" style="font-size: 2.2rem; color: var(--grey-mid); display: block; margin-bottom: 1rem;"></i>
+                            <h4 style="font-weight: 700; color: var(--black); margin-bottom: 0.25rem;">Cửa hàng chưa có sản phẩm</h4>
+                            <p style="color: var(--grey-mid); font-size: 0.85rem;">Các sản phẩm của đối tác này sẽ được đăng tải sớm nhất.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.25rem;">
+                            @foreach (var prod in products)
+                            {
+                                <div class="product-card" style="background: var(--white); border: 1px solid var(--grey-dark); border-radius: var(--radius-md); overflow: hidden; display: flex; flex-direction: column; transition: var(--transition);"
+                                     onmouseover="this.style.transform='translateY(-4px)'; this.style.borderColor='var(--neon)'; this.style.boxShadow='var(--shadow-neon)';"
+                                     onmouseout="this.style.transform='none'; this.style.borderColor='var(--grey-dark)'; this.style.boxShadow='none';">
+                                    
+                                    <!-- Image area -->
+                                    <div style="height: 160px; background: var(--charcoal); overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center;">
+                                        @if (!string.IsNullOrEmpty(prod.MainImageUrl))
+                                        {
+                                            <img src="@prod.MainImageUrl" style="width: 100%; height: 100%; object-fit: contain; padding: 10px;" alt="@prod.Name" />
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-image" style="font-size: 2rem; color: var(--grey-mid);"></i>
+                                        }
+                                        
+                                        <!-- HOT badge -->
+                                        @if (prod.IsFeatured)
+                                        {
+                                            <span style="position: absolute; top: 10px; left: 10px; background: var(--red); color: var(--white); font-family: var(--font-mono); font-size: 0.6rem; font-weight: 700; padding: 2px 6px; border-radius: 2px; text-transform: uppercase;">HOT</span>
+                                        }
+                                    </div>
+
+                                    <!-- Body -->
+                                    <div style="padding: 1rem; display: flex; flex-direction: column; flex-grow: 1;">
+                                        
+                                        <!-- Brand -->
+                                        <div class="label-mono" style="font-size: 0.65rem; color: var(--neon); margin-bottom: 0.25rem;">
+                                            @prod.Brand
+                                        </div>
+
+                                        <!-- Title -->
+                                        <h4 style="font-size: 0.85rem; font-weight: 700; margin-bottom: 0.5rem; line-height: 1.3; height: 34px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                                            <a href="/products/@prod.Slug" style="color: var(--black);">@prod.Name</a>
+                                        </h4>
+
+                                        <!-- Price -->
+                                        <div style="display: flex; align-items: baseline; gap: 6px; margin-top: auto; margin-bottom: 0.75rem;">
+                                            @if (prod.SalePrice.HasValue && prod.SalePrice < prod.Price)
+                                            {
+                                                <span style="font-weight: 700; color: var(--neon); font-size: 0.95rem;">@prod.SalePrice.Value.ToString("N0")đ</span>
+                                                <span style="text-decoration: line-through; color: var(--grey-mid); font-size: 0.75rem;">@prod.Price.ToString("N0")đ</span>
+                                            }
+                                            else
+                                            {
+                                                <span style="font-weight: 700; color: var(--black); font-size: 0.95rem;">@prod.Price.ToString("N0")đ</span>
+                                            }
+                                        </div>
+
+                                        <!-- Details action -->
+                                        <a href="/products/@prod.Slug" class="btn btn-outline" style="width: 100%; text-align: center; justify-content: center; padding: 8px; font-size: 0.7rem; border-color: var(--grey-dark);">
+                                            Chi tiết sản phẩm
+                                        </a>
+
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+
+                </div>
+
+                <!-- Tab 2: About / Description -->
+                <div class="tab-content" id="about-tab" style="display: none;">
+                    <div style="border: 1px solid var(--grey-dark); border-radius: var(--radius-md); padding: 1.5rem; background: var(--white); line-height: 1.7;">
+                        <h3 style="font-size: 1.1rem; font-weight: 750; color: var(--black); margin-bottom: 1rem; border-left: 3px solid var(--neon); padding-left: 10px;">
+                            GIỚI THIỆU CHUNG
+                        </h3>
+                        <p style="color: var(--grey); font-size: 0.9rem; white-space: pre-line; margin-bottom: 1.5rem;">
+                            @(string.IsNullOrEmpty(Model.Description) ? "Thông tin giới thiệu về cửa hàng đang được cập nhật." : Model.Description)
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Tab 3: Policies -->
+                <div class="tab-content" id="policies-tab" style="display: none;">
+                    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                        
+                        <!-- Warranty Policy -->
+                        <div style="border: 1px solid var(--grey-dark); border-radius: var(--radius-md); padding: 1.5rem; background: var(--white); line-height: 1.7;">
+                            <h3 style="font-size: 1.1rem; font-weight: 750; color: var(--black); margin-bottom: 1rem; border-left: 3px solid var(--neon); padding-left: 10px; text-transform: uppercase;">
+                                <i class="bi bi-shield-check me-1" style="color: var(--neon);"></i> Chính sách bảo hành
+                            </h3>
+                            <p style="color: var(--grey); font-size: 0.9rem; white-space: pre-line;">
+                                @(string.IsNullOrEmpty(Model.WarrantyPolicy) ? "Chính sách bảo hành đang được cập nhật. Vui lòng liên hệ trực tiếp với cửa hàng để biết thêm chi tiết." : Model.WarrantyPolicy)
+                            </p>
+                        </div>
+
+                        <!-- Return Policy -->
+                        <div style="border: 1px solid var(--grey-dark); border-radius: var(--radius-md); padding: 1.5rem; background: var(--white); line-height: 1.7;">
+                            <h3 style="font-size: 1.1rem; font-weight: 750; color: var(--black); margin-bottom: 1rem; border-left: 3px solid var(--neon); padding-left: 10px; text-transform: uppercase;">
+                                <i class="bi bi-arrow-left-right me-1" style="color: var(--neon);"></i> Chính sách đổi trả
+                            </h3>
+                            <p style="color: var(--grey); font-size: 0.9rem; white-space: pre-line;">
+                                @(string.IsNullOrEmpty(Model.ReturnPolicy) ? "Chính sách đổi trả đang được cập nhật. Vui lòng liên hệ trực tiếp với cửa hàng để biết thêm chi tiết." : Model.ReturnPolicy)
+                            </p>
+                        </div>
+                        
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<!-- Tab Switching Logic Script -->
+<script>
+    function switchTab(tabId) {
+        // Hide all tab content
+        const contents = document.querySelectorAll('.tab-content');
+        contents.forEach(content => content.style.display = 'none');
+
+        // Show selected tab content
+        document.getElementById(tabId).style.display = 'block';
+
+        // Update active tab button style
+        const buttons = document.querySelectorAll('.tab-btn');
+        buttons.forEach(btn => {
+            btn.style.color = 'var(--grey-mid)';
+            btn.style.borderBottomColor = 'transparent';
+        });
+
+        // Set active on clicked button
+        const clickedBtn = document.getElementById(tabId + '-btn');
+        clickedBtn.style.color = 'var(--neon)';
+        clickedBtn.style.borderBottomColor = 'var(--neon)';
+    }
+</script>

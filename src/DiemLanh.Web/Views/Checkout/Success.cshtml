@@ -1,0 +1,177 @@
+@model DiemLanh.Application.DTOs.Order.CustomerOrderSummaryDto
+@{
+    ViewData["Title"] = "Đặt Hàng Thành Công";
+}
+
+<style>
+.success-wrap { max-width: 680px; margin: 3rem auto; padding: 0 1rem; }
+.success-hero { text-align: center; margin-bottom: 2.5rem; }
+.success-icon { width: 88px; height: 88px; background: rgba(13,148,136,.1); border: 3px solid var(--neon); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; animation: pop .5s cubic-bezier(0.175,0.885,0.32,1.275); }
+@@keyframes pop { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.success-icon i { font-size: 2.4rem; color: var(--neon); }
+.order-card { background: var(--white); border: 1px solid var(--grey-dark); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 1.5rem; }
+.order-card-header { padding: 1.25rem 1.5rem; background: var(--charcoal); border-bottom: 1px solid var(--grey-dark); display: flex; align-items: center; justify-content: space-between; }
+.order-card-body { padding: 1.5rem; }
+.info-row { display: flex; justify-content: space-between; align-items: center; padding: .6rem 0; border-bottom: 1px solid var(--grey-dark); font-size: .875rem; }
+.info-row:last-child { border-bottom: none; }
+.info-label { color: var(--grey-mid); font-family: var(--font-mono); font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; }
+.info-val { font-weight: 600; color: var(--black); text-align: right; }
+.status-badge { display: inline-flex; align-items: center; gap: .4rem; padding: 4px 12px; border-radius: 100px; font-family: var(--font-mono); font-size: .65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+.status-pending { background: #FEF3C7; color: #92400E; }
+.bank-transfer-box { background: rgba(13,148,136,.05); border: 1.5px solid rgba(13,148,136,.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
+.bank-row { display: flex; justify-content: space-between; align-items: center; padding: .5rem 0; font-size: .875rem; border-bottom: 1px dashed rgba(13,148,136,.2); }
+.bank-row:last-child { border-bottom: none; }
+.bank-label { color: var(--grey); }
+.bank-val { font-weight: 700; color: var(--black); font-family: var(--font-mono); }
+.copy-btn { background: var(--charcoal); border: 1px solid var(--grey-dark); border-radius: 4px; padding: 3px 8px; font-size: .7rem; cursor: pointer; color: var(--grey); transition: all .15s; }
+.copy-btn:hover { border-color: var(--neon); color: var(--neon); }
+.action-btns { display: flex; gap: 1rem; margin-top: 1.5rem; }
+.btn-primary-neon { flex: 1; padding: 12px; background: var(--neon); color: #fff; border: none; border-radius: 8px; font-weight: 700; font-size: .9rem; text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: .5rem; transition: all .2s; cursor: pointer; }
+.btn-primary-neon:hover { background: #0b8177; color: #fff; transform: translateY(-1px); }
+.btn-outline-dark { flex: 1; padding: 12px; background: transparent; color: var(--black); border: 1.5px solid var(--grey-dark); border-radius: 8px; font-weight: 600; font-size: .9rem; text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: .5rem; transition: all .2s; }
+.btn-outline-dark:hover { border-color: var(--neon); color: var(--neon); }
+.timeline { display: flex; align-items: center; gap: 0; margin-bottom: 2rem; }
+.timeline-step { flex: 1; text-align: center; position: relative; }
+.timeline-step::before { content: ''; position: absolute; top: 14px; left: 50%; right: -50%; height: 2px; background: var(--grey-dark); z-index: 0; }
+.timeline-step:last-child::before { display: none; }
+.timeline-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto .5rem; position: relative; z-index: 1; font-size: .75rem; font-weight: 700; }
+.timeline-dot.done { background: var(--neon); color: #fff; }
+.timeline-dot.active { background: #FEF3C7; border: 2px solid #F59E0B; color: #92400E; }
+.timeline-dot.pending { background: var(--charcoal); border: 2px solid var(--grey-dark); color: var(--grey-mid); }
+.timeline-label { font-size: .65rem; color: var(--grey-mid); font-family: var(--font-mono); text-transform: uppercase; letter-spacing: .06em; }
+</style>
+
+<div class="success-wrap">
+    <!-- Hero -->
+    <div class="success-hero">
+        <div class="success-icon">
+            <i class="bi bi-check2-circle"></i>
+        </div>
+        <h1 style="font-size:1.75rem;font-weight:800;text-transform:uppercase;letter-spacing:-.03em;margin-bottom:.5rem">
+            Đặt Hàng <span class="text-neon">Thành Công!</span>
+        </h1>
+        <p style="color:var(--grey);margin-bottom:1rem">
+            Đơn hàng của bạn đã được ghi nhận. Cửa hàng sẽ xác nhận và liên hệ với bạn trong thời gian sớm nhất.
+        </p>
+        <div style="display:inline-flex;align-items:center;gap:.5rem;background:var(--charcoal);border:1px solid var(--grey-dark);border-radius:8px;padding:.6rem 1.25rem">
+            <span style="font-family:var(--font-mono);font-size:.7rem;color:var(--grey-mid)">MÃ ĐƠN HÀNG</span>
+            <strong style="font-family:var(--font-mono);font-size:1rem;color:var(--neon)">#@Model.OrderCode</strong>
+            <button class="copy-btn" onclick="navigator.clipboard.writeText('@Model.OrderCode');this.textContent='✓'">Copy</button>
+        </div>
+    </div>
+
+    <!-- Order Timeline -->
+    <div class="order-card" style="margin-bottom:1.5rem">
+        <div class="order-card-body">
+            <div style="font-family:var(--font-mono);font-size:.65rem;text-transform:uppercase;letter-spacing:.1em;color:var(--neon);margin-bottom:1.25rem">Trạng thái đơn hàng</div>
+            <div class="timeline">
+                <div class="timeline-step">
+                    <div class="timeline-dot done"><i class="bi bi-check2"></i></div>
+                    <div class="timeline-label">Đã đặt</div>
+                </div>
+                <div class="timeline-step">
+                    <div class="timeline-dot active">2</div>
+                    <div class="timeline-label">Chờ xác nhận</div>
+                </div>
+                <div class="timeline-step">
+                    <div class="timeline-dot pending">3</div>
+                    <div class="timeline-label">Chuẩn bị</div>
+                </div>
+                <div class="timeline-step">
+                    <div class="timeline-dot pending">4</div>
+                    <div class="timeline-label">Giao hàng</div>
+                </div>
+                <div class="timeline-step">
+                    <div class="timeline-dot pending">5</div>
+                    <div class="timeline-label">Lắp đặt</div>
+                </div>
+            </div>
+            <div style="text-align:center;font-size:.8rem;color:var(--grey-mid)">
+                <i class="bi bi-clock me-1" style="color:var(--neon)"></i>
+                Cửa hàng thường xác nhận trong vòng <strong>30 phút – 2 giờ</strong> trong giờ làm việc
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Details -->
+    <div class="order-card" style="margin-bottom:1.5rem">
+        <div class="order-card-header">
+            <span style="font-family:var(--font-mono);font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--grey)">Chi tiết đơn hàng</span>
+            <span class="status-badge status-pending">
+                <span style="width:6px;height:6px;border-radius:50%;background:#F59E0B;display:inline-block;animation:pulse 1.5s infinite"></span>
+                @Model.StatusDisplay
+            </span>
+        </div>
+        <div class="order-card-body">
+            <div class="info-row">
+                <span class="info-label">Sản phẩm</span>
+                <span class="info-val" style="max-width:60%;text-align:right">@Model.FirstProductName</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Số lượng sản phẩm</span>
+                <span class="info-val">@Model.ItemCount</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Cửa hàng</span>
+                <span class="info-val">@Model.StoreName</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Ngày đặt</span>
+                <span class="info-val">@Model.CreatedAt.AddHours(7).ToString("dd/MM/yyyy HH:mm")</span>
+            </div>
+            <div class="info-row" style="border-bottom:none;padding-top:1rem">
+                <span style="font-size:1rem;font-weight:700;color:var(--black)">Tổng thanh toán</span>
+                <span style="font-size:1.35rem;font-weight:800;color:var(--neon)">@Model.TotalAmount.ToString("N0")đ</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bank Transfer Info (always visible, user can ignore if COD) -->
+    <div class="bank-transfer-box">
+        <div style="font-family:var(--font-mono);font-size:.65rem;text-transform:uppercase;letter-spacing:.1em;color:var(--neon);margin-bottom:1rem">
+            <i class="bi bi-bank me-1"></i>Thông tin chuyển khoản (nếu chọn)
+        </div>
+        <div class="bank-row">
+            <span class="bank-label">Ngân hàng</span>
+            <span class="bank-val">Vietcombank</span>
+        </div>
+        <div class="bank-row">
+            <span class="bank-label">Số tài khoản</span>
+            <div style="display:flex;align-items:center;gap:.5rem">
+                <span class="bank-val" id="bankAccNum">0123456789</span>
+                <button class="copy-btn" onclick="navigator.clipboard.writeText('0123456789');this.textContent='✓'">Copy</button>
+            </div>
+        </div>
+        <div class="bank-row">
+            <span class="bank-label">Chủ tài khoản</span>
+            <span class="bank-val">COOLCONNECT COMPANY</span>
+        </div>
+        <div class="bank-row">
+            <span class="bank-label">Nội dung chuyển khoản</span>
+            <div style="display:flex;align-items:center;gap:.5rem">
+                <span class="bank-val" id="bankRef">THANHTOAN @Model.OrderCode</span>
+                <button class="copy-btn" onclick="navigator.clipboard.writeText('THANHTOAN @Model.OrderCode');this.textContent='✓'">Copy</button>
+            </div>
+        </div>
+        <div class="bank-row" style="border:none">
+            <span class="bank-label">Số tiền</span>
+            <span class="bank-val" style="color:var(--neon);font-size:1.1rem">@Model.TotalAmount.ToString("N0") VNĐ</span>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="action-btns">
+        <a href="/auth/orders" class="btn-primary-neon">
+            <i class="bi bi-bag-heart"></i> Xem đơn hàng của tôi
+        </a>
+        <a href="/products" class="btn-outline-dark">
+            <i class="bi bi-grid"></i> Tiếp tục mua sắm
+        </a>
+    </div>
+</div>
+
+@section Scripts {
+<style>
+@@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.3; } }
+</style>
+}

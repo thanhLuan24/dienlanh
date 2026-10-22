@@ -1,0 +1,83 @@
+@model IEnumerable<DiemLanh.Application.DTOs.Store.StoreServiceAreaDto>
+@{
+    ViewData["Title"] = "Quản lý Khu vực phục vụ";
+    Layout = "~/Views/Admin/_AdminLayout.cshtml";
+    var stores = ViewBag.Stores as IEnumerable<DiemLanh.Application.DTOs.Admin.StoreSimpleDto> ?? Enumerable.Empty<DiemLanh.Application.DTOs.Admin.StoreSimpleDto>();
+    var selectedStoreId = ViewBag.SelectedStoreId as int?;
+}
+
+<form method="get" action="/admin/service-areas" class="adm-filter-bar">
+    <select name="storeId" onchange="this.form.submit()" style="background:var(--charcoal);border:1px solid var(--grey-dark);color:var(--black);padding:8px 12px;border-radius:6px;font-size:.85rem;outline:none;min-width:240px">
+        <option value="">-- Tất cả cửa hàng --</option>
+        @foreach (var s in stores)
+        {
+            <option value="@s.Id" selected="@(selectedStoreId == s.Id)">@s.Name</option>
+        }
+    </select>
+    <a href="/admin/service-areas" class="btn-adm btn-adm-outline">Xóa bộ lọc</a>
+</form>
+
+<div style="display:grid;grid-template-columns:1fr 340px;gap:1.5rem">
+    <div class="adm-table-wrap">
+        <table class="adm-table">
+            <thead>
+                <tr><th>Cửa hàng</th><th>Tỉnh / Thành</th><th>Quận / Huyện</th><th>Phường / Xã</th><th>Bán kính</th><th>Hành động</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var area in Model)
+                {
+                    <tr>
+                        <td style="color:var(--neon);font-weight:600">@area.StoreName</td>
+                        <td style="font-weight:600">@area.Province</td>
+                        <td>@(area.District ?? "—")</td>
+                        <td>@(area.Ward ?? "—")</td>
+                        <td>@(area.RadiusKm.HasValue ? $"{area.RadiusKm} km" : "—")</td>
+                        <td>
+                            <form method="post" action="/admin/service-areas/@area.Id/remove" onsubmit="return confirm('Xóa khu vực này?')">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn-adm btn-adm-sm btn-adm-danger"><i class="bi bi-trash"></i> Xóa</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="6" style="text-align:center;color:var(--grey-mid);padding:3rem">Chưa có khu vực phục vụ nào</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Add Area Form -->
+    <form method="post" action="/admin/service-areas/add" class="adm-form-section">
+        @Html.AntiForgeryToken()
+        <div class="adm-form-section-title">THÊM KHU VỰC PHỤC VỤ</div>
+        <div class="adm-field">
+            <label class="adm-label">Thuộc Cửa Hàng *</label>
+            <select name="StoreId" class="adm-input" required>
+                <option value="">-- Chọn cửa hàng --</option>
+                @foreach (var s in stores)
+                {
+                    <option value="@s.Id" selected="@(selectedStoreId == s.Id)">@s.Name</option>
+                }
+            </select>
+        </div>
+        <div class="adm-field">
+            <label class="adm-label">Tỉnh / Thành *</label>
+            <input type="text" name="Province" class="adm-input" required placeholder="Ví dụ: TP. Hồ Chí Minh" />
+        </div>
+        <div class="adm-field">
+            <label class="adm-label">Quận / Huyện</label>
+            <input type="text" name="District" class="adm-input" placeholder="Ví dụ: Quận 1" />
+        </div>
+        <div class="adm-field">
+            <label class="adm-label">Phường / Xã</label>
+            <input type="text" name="Ward" class="adm-input" placeholder="Ví dụ: Phường Bến Nghé" />
+        </div>
+        <div class="adm-field">
+            <label class="adm-label">Bán kính (km)</label>
+            <input type="number" name="RadiusKm" class="adm-input" placeholder="20" />
+        </div>
+        <button type="submit" class="btn-adm btn-adm-primary w-100" style="margin-top:1rem"><i class="bi bi-plus-lg"></i> Thêm Khu Vực</button>
+    </form>
+</div>

@@ -1,0 +1,111 @@
+@model DiemLanh.Web.Models.RegisterViewModel
+@{
+    ViewData["Title"] = "Đăng ký – CoolConnect";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true"/>
+    <style>
+        body{margin:0;min-height:100vh;background:var(--charcoal);display:flex;align-items:center;justify-content:center;font-family:var(--font-main);padding:2rem 1rem;}
+        .auth-card{background:var(--white);border:1px solid var(--grey-dark);border-radius:var(--radius-lg);padding:2.5rem;width:100%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,.08);}
+        .auth-logo{text-align:center;margin-bottom:2rem;}
+        .auth-logo span:first-child{font-size:1.6rem;font-weight:800;color:var(--black);letter-spacing:-.03em;}
+        .auth-logo span.neon{color:var(--neon);}
+        h2{font-size:1.6rem;font-weight:800;color:var(--black);letter-spacing:-.03em;margin-bottom:.3rem;}
+        p.sub{color:var(--grey-mid);font-size:.875rem;margin-bottom:1.8rem;}
+        .form-group{margin-bottom:1.1rem;}
+        .form-label{display:block;font-family:var(--font-mono);font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--grey);margin-bottom:.45rem;}
+        .form-control{width:100%;background:var(--charcoal);border:1px solid var(--grey-dark);color:var(--black);padding:11px 14px;border-radius:var(--radius-sm);font-family:var(--font-main);font-size:.9rem;outline:none;box-sizing:border-box;transition:border-color .2s;}
+        .form-control:focus{border-color:var(--neon);box-shadow:0 0 0 3px rgba(13,148,136,.1);}
+        .input-icon-wrap{position:relative;}
+        .input-icon-wrap .form-control{padding-left:40px;}
+        .input-icon-wrap .bi{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--grey-mid);}
+        .btn-reg{width:100%;background:var(--neon);color:#fff;border:none;padding:13px;border-radius:var(--radius-sm);font-family:var(--font-main);font-weight:700;font-size:.95rem;cursor:pointer;transition:all .25s;margin-top:.5rem;}
+        .btn-reg:hover{background:#0b8177;box-shadow:0 8px 25px rgba(13,148,136,.3);transform:translateY(-1px);}
+        .auth-link{text-align:center;font-size:.875rem;color:var(--grey);margin-top:1.2rem;}
+        .auth-link a{color:var(--neon);font-weight:600;text-decoration:none;}
+        .auth-link a:hover{text-decoration:underline;}
+        .error-list{background:#FEF2F2;border:1px solid #FCA5A5;border-radius:var(--radius-sm);padding:.75rem 1rem;margin-bottom:1rem;}
+        .error-list li{color:#B91C1C;font-size:.85rem;list-style:none;padding:2px 0;}
+        .error-list li::before{content:'⚠ ';}
+        .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;}
+    </style>
+</head>
+<body>
+<div class="auth-card">
+    <div class="auth-logo">
+        <a href="/" style="text-decoration:none">
+            <span>Cool<span class="neon">Connect</span></span>
+        </a>
+    </div>
+
+    <h2>Tạo tài khoản</h2>
+    <p class="sub">Tham gia CoolConnect để khám phá thiết bị điện lạnh tốt nhất.</p>
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <ul class="error-list">
+            @foreach (var err in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+            {
+                <li>@err.ErrorMessage</li>
+            }
+        </ul>
+    }
+
+    <form asp-action="Register" asp-controller="Account" method="post">
+        @Html.AntiForgeryToken()
+
+        <div class="form-group">
+            <label class="form-label">Họ và tên</label>
+            <div class="input-icon-wrap">
+                <i class="bi bi-person"></i>
+                <input asp-for="FullName" type="text" class="form-control" placeholder="Nguyễn Văn A" autocomplete="name"/>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Email</label>
+            <div class="input-icon-wrap">
+                <i class="bi bi-envelope"></i>
+                <input asp-for="Email" type="email" class="form-control" placeholder="email@example.com" autocomplete="email"/>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">Mật khẩu</label>
+                <div class="input-icon-wrap">
+                    <i class="bi bi-lock"></i>
+                    <input asp-for="Password" type="password" class="form-control" placeholder="≥ 8 ký tự" autocomplete="new-password"/>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Xác nhận</label>
+                <div class="input-icon-wrap">
+                    <i class="bi bi-lock-fill"></i>
+                    <input asp-for="ConfirmPassword" type="password" class="form-control" placeholder="Nhập lại" autocomplete="new-password"/>
+                </div>
+            </div>
+        </div>
+
+        <div style="background:var(--charcoal);border-radius:var(--radius-sm);padding:.75rem 1rem;font-size:.78rem;color:var(--grey-mid);margin-bottom:1rem">
+            <i class="bi bi-info-circle me-1"></i> Mật khẩu tối thiểu 8 ký tự, phải có chữ hoa, chữ thường và số.
+        </div>
+
+        <button type="submit" class="btn-reg">
+            <i class="bi bi-person-plus me-1"></i> Tạo tài khoản
+        </button>
+    </form>
+
+    <div class="auth-link">
+        Đã có tài khoản? <a href="/auth/login">Đăng nhập</a>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,84 @@
+@model DiemLanh.Application.Common.PagedResult<DiemLanh.Application.DTOs.Repair.RepairRequestDto>
+@using DiemLanh.Domain.Enums
+@{
+    ViewData["Title"] = "Quản lý Sửa chữa toàn hệ thống";
+    Layout = "~/Views/Admin/_AdminLayout.cshtml";
+    var filter = ViewBag.Filter as DiemLanh.Application.DTOs.Repair.RepairFilterDto ?? new();
+    var stores = ViewBag.Stores as IEnumerable<DiemLanh.Application.DTOs.Admin.StoreSimpleDto> ?? Enumerable.Empty<DiemLanh.Application.DTOs.Admin.StoreSimpleDto>();
+    var selectedStoreId = ViewBag.SelectedStoreId as int?;
+}
+
+<form method="get" action="/admin/repairs" class="adm-filter-bar">
+    <div class="adm-search">
+        <i class="bi bi-search"></i>
+        <input type="text" name="Keyword" value="@filter.Keyword" placeholder="Khách hàng, SĐT, thiết bị..."/>
+    </div>
+    <select name="storeId" onchange="this.form.submit()" style="background:var(--charcoal);border:1px solid var(--grey-dark);color:var(--black);padding:8px 12px;border-radius:6px;font-size:.85rem;outline:none">
+        <option value="">-- Tất cả cửa hàng --</option>
+        @foreach (var s in stores)
+        {
+            <option value="@s.Id" selected="@(selectedStoreId == s.Id)">@s.Name</option>
+        }
+    </select>
+    <select name="Status" onchange="this.form.submit()" style="background:var(--charcoal);border:1px solid var(--grey-dark);color:var(--black);padding:8px 12px;border-radius:6px;font-size:.85rem;outline:none">
+        <option value="">-- Tất cả trạng thái --</option>
+        <option value="PendingReceive" selected="@(filter.Status == RepairStatus.PendingReceive)">Chờ tiếp nhận</option>
+        <option value="Checking" selected="@(filter.Status == RepairStatus.Checking)">Đang kiểm tra</option>
+        <option value="Scheduled" selected="@(filter.Status == RepairStatus.Scheduled)">Đã hẹn lịch</option>
+        <option value="Repairing" selected="@(filter.Status == RepairStatus.Repairing)">Đang sửa</option>
+        <option value="Completed" selected="@(filter.Status == RepairStatus.Completed)">Hoàn thành</option>
+        <option value="CannotRepair" selected="@(filter.Status == RepairStatus.CannotRepair)">Không thể sửa</option>
+    </select>
+    <button type="submit" class="btn-adm btn-adm-primary"><i class="bi bi-search"></i> Lọc</button>
+    <a href="/admin/repairs" class="btn-adm btn-adm-outline">Xóa bộ lọc</a>
+</form>
+
+<div class="adm-table-wrap">
+    <table class="adm-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Cửa hàng</th>
+                <th>Khách hàng</th>
+                <th>Thiết bị</th>
+                <th>KTV</th>
+                <th>Chi phí</th>
+                <th>Trạng thái</th>
+                <th>Ngày tạo</th>
+                <th>Thao tác</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var r in Model.Items)
+            {
+                <tr>
+                    <td style="font-family:var(--font-mono);font-weight:700;color:var(--neon)">#SR-@r.Id</td>
+                    <td style="font-weight:600">@r.StoreName</td>
+                    <td>
+                        <div style="font-weight:600">@r.CustomerName</div>
+                        <div style="font-size:.75rem;color:var(--grey-mid)">@r.CustomerPhone</div>
+                    </td>
+                    <td>
+                        <div style="font-weight:600">@r.DeviceType - @r.Brand</div>
+                        <div style="font-size:.75rem;color:var(--grey-mid)">@r.Symptoms</div>
+                    </td>
+                    <td>@(r.TechnicianName ?? "Chưa gán")</td>
+                    <td style="font-weight:700;color:var(--neon)">@(r.ActualCost.HasValue ? $"{r.ActualCost.Value.ToString("N0")}đ" : r.EstimatedCost.HasValue ? $"~{r.EstimatedCost.Value.ToString("N0")}đ" : "—")</td>
+                    <td>
+                        <span class="badge-pill @(r.Status == RepairStatus.Completed ? "badge-success" : r.Status == RepairStatus.Repairing ? "badge-warning" : "badge-grey")">
+                            @r.StatusDisplay
+                        </span>
+                    </td>
+                    <td style="font-size:.8rem;color:var(--grey-mid)">@r.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                    <td>
+                        <a href="/admin/repairs/@r.Id" class="btn-adm btn-adm-sm btn-adm-outline"><i class="bi bi-pencil"></i> Chi tiết / Sửa</a>
+                    </td>
+                </tr>
+            }
+            @if (!Model.Items.Any())
+            {
+                <tr><td colspan="9" style="text-align:center;color:var(--grey-mid);padding:3rem">Không có yêu cầu sửa chữa nào</td></tr>
+            }
+        </tbody>
+    </table>
+</div>

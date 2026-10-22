@@ -1,0 +1,153 @@
+@model DiemLanh.Web.Models.LoginViewModel
+@{
+    ViewData["Title"] = "Đăng nhập – CoolConnect";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true"/>
+    <style>
+        body{margin:0;min-height:100vh;background:var(--white);display:flex;align-items:center;justify-content:center;font-family:var(--font-main);}
+        .auth-wrap{display:grid;grid-template-columns:1fr 1fr;min-height:100vh;width:100%;}
+        .auth-left{background:var(--black);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem;position:relative;overflow:hidden;}
+        .auth-left::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(ellipse at 30% 40%, rgba(13,148,136,.18) 0%, transparent 60%);pointer-events:none;}
+        .auth-right{background:var(--white);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem;}
+        .auth-logo{font-size:2rem;font-weight:800;color:var(--white);letter-spacing:-.04em;margin-bottom:.5rem;}
+        .auth-logo span{color:var(--neon);}
+        .auth-tagline{color:var(--grey-mid);font-family:var(--font-mono);font-size:.8rem;text-transform:uppercase;letter-spacing:.15em;margin-bottom:3rem;}
+        .auth-feature{display:flex;align-items:flex-start;gap:1rem;margin-bottom:1.5rem;color:var(--grey);}
+        .auth-feature-icon{width:38px;height:38px;background:rgba(13,148,136,.12);border:1px solid rgba(13,148,136,.25);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--neon);}
+        .auth-feature-title{color:var(--white);font-weight:600;font-size:.9rem;margin-bottom:.2rem;}
+        .auth-feature-desc{font-size:.8rem;color:var(--grey-mid);}
+        .auth-form-box{width:100%;max-width:420px;}
+        .auth-form-box h2{font-size:1.8rem;font-weight:800;color:var(--black);letter-spacing:-.03em;margin-bottom:.4rem;}
+        .auth-form-box p{color:var(--grey-mid);font-size:.875rem;margin-bottom:2rem;}
+        .form-group{margin-bottom:1.2rem;}
+        .form-label{display:block;font-family:var(--font-mono);font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--grey);margin-bottom:.5rem;}
+        .form-control{width:100%;background:var(--charcoal);border:1px solid var(--grey-dark);color:var(--black);padding:11px 14px;border-radius:var(--radius-sm);font-family:var(--font-main);font-size:.9rem;outline:none;box-sizing:border-box;transition:border-color .2s;}
+        .form-control:focus{border-color:var(--neon);box-shadow:0 0 0 3px rgba(13,148,136,.1);}
+        .input-icon-wrap{position:relative;}
+        .input-icon-wrap .form-control{padding-left:40px;}
+        .input-icon-wrap .bi{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--grey-mid);}
+        .btn-login{width:100%;background:var(--neon);color:#fff;border:none;padding:13px;border-radius:var(--radius-sm);font-family:var(--font-main);font-weight:700;font-size:.95rem;cursor:pointer;letter-spacing:.02em;transition:all .25s;margin-top:.5rem;}
+        .btn-login:hover{background:#0b8177;box-shadow:0 8px 25px rgba(13,148,136,.3);transform:translateY(-1px);}
+        .auth-divider{text-align:center;color:var(--grey-mid);font-size:.8rem;margin:1.2rem 0;position:relative;}
+        .auth-divider::before,.auth-divider::after{content:'';display:inline-block;width:40%;height:1px;background:var(--grey-dark);vertical-align:middle;margin:0 .75rem;}
+        .auth-link{text-align:center;font-size:.875rem;color:var(--grey);}
+        .auth-link a{color:var(--neon);font-weight:600;text-decoration:none;}
+        .auth-link a:hover{text-decoration:underline;}
+        .remember-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;}
+        .remember-row label{display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--grey);cursor:pointer;}
+        .error-list{background:#FEF2F2;border:1px solid #FCA5A5;border-radius:var(--radius-sm);padding:.75rem 1rem;margin-bottom:1rem;}
+        .error-list li{color:#B91C1C;font-size:.85rem;list-style:none;padding:2px 0;}
+        .error-list li::before{content:'⚠ ';}
+        @@media(max-width:768px){.auth-left{display:none;}.auth-wrap{grid-template-columns:1fr;}.auth-right{padding:2rem 1.5rem;}}
+    </style>
+</head>
+<body>
+<div class="auth-wrap">
+    <!-- Left Panel -->
+    <div class="auth-left">
+        <div style="max-width:380px;text-align:center">
+            <div class="auth-logo">Cool<span>Connect</span></div>
+            <div class="auth-tagline">Marketplace Điện Lạnh Hàng Đầu</div>
+        </div>
+        <div style="max-width:340px;width:100%">
+            <div class="auth-feature">
+                <div class="auth-feature-icon"><i class="bi bi-shop"></i></div>
+                <div>
+                    <div class="auth-feature-title">200+ Cửa hàng uy tín</div>
+                    <div class="auth-feature-desc">Đối tác được kiểm duyệt toàn quốc</div>
+                </div>
+            </div>
+            <div class="auth-feature">
+                <div class="auth-feature-icon"><i class="bi bi-robot"></i></div>
+                <div>
+                    <div class="auth-feature-title">AI Tư vấn 24/7</div>
+                    <div class="auth-feature-desc">Chọn đúng sản phẩm theo không gian</div>
+                </div>
+            </div>
+            <div class="auth-feature">
+                <div class="auth-feature-icon"><i class="bi bi-shield-check"></i></div>
+                <div>
+                    <div class="auth-feature-title">Bảo hành chính hãng</div>
+                    <div class="auth-feature-desc">Lắp đặt & bảo trì tận nơi</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Panel -->
+    <div class="auth-right">
+        <div class="auth-form-box">
+            <div style="margin-bottom:2rem">
+                <a href="/" style="display:inline-flex;align-items:center;gap:6px;color:var(--grey);font-size:.8rem;text-decoration:none;margin-bottom:1.5rem;">
+                    <i class="bi bi-arrow-left"></i> Quay lại trang chủ
+                </a>
+                <h2>Đăng nhập</h2>
+                <p>Chào mừng trở lại! Nhập thông tin để tiếp tục.</p>
+            </div>
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <ul class="error-list">
+                    @foreach (var err in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                    {
+                        <li>@err.ErrorMessage</li>
+                    }
+                </ul>
+            }
+
+            <form asp-action="Login" asp-controller="Account" asp-route-returnUrl="@ViewBag.ReturnUrl" method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <div class="input-icon-wrap">
+                        <i class="bi bi-envelope"></i>
+                        <input asp-for="Email" type="email" class="form-control" placeholder="email@example.com" autocomplete="email"/>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Mật khẩu</label>
+                    <div class="input-icon-wrap">
+                        <i class="bi bi-lock"></i>
+                        <input asp-for="Password" type="password" class="form-control" placeholder="••••••••" autocomplete="current-password"/>
+                    </div>
+                </div>
+
+                <div class="remember-row">
+                    <label>
+                        <input asp-for="RememberMe" type="checkbox" style="accent-color:var(--neon)"/>
+                        Ghi nhớ đăng nhập
+                    </label>
+                </div>
+
+                <button type="submit" class="btn-login">
+                    <i class="bi bi-box-arrow-in-right me-1"></i> Đăng nhập
+                </button>
+            </form>
+
+            <div class="auth-divider">hoặc</div>
+
+            <div class="auth-link">
+                Chưa có tài khoản? <a href="/auth/register">Đăng ký ngay</a>
+            </div>
+
+            <div style="margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--grey-dark);text-align:center">
+                <div style="font-family:var(--font-mono);font-size:.65rem;color:var(--grey-mid);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem">Tài khoản demo</div>
+                <div style="font-size:.78rem;color:var(--grey)">
+                    Admin: <code style="color:var(--neon)">admin@coolconnect.vn</code> / <code style="color:var(--neon)">Admin@123</code>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

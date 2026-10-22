@@ -1,0 +1,276 @@
+@model DiemLanh.Application.Common.PagedResult<DiemLanh.Application.DTOs.Store.StoreListDto>
+@{
+    ViewData["Title"] = "Cửa Hàng Đối Tác";
+    var filter = ViewBag.Filter as DiemLanh.Application.DTOs.Store.StoreFilterDto ?? new();
+}
+
+<!-- Premium Tech Header Banner -->
+<section class="section-pad-sm" style="background: var(--charcoal); border-bottom: 1px solid var(--grey-dark); position: relative; overflow: hidden;">
+    <!-- Dotted background effect -->
+    <div style="position: absolute; inset: 0; background-image: radial-gradient(var(--grey-mid) 1px, transparent 1px); background-size: 16px 16px; opacity: 0.15; pointer-events: none;"></div>
+    
+    <div class="container" style="position: relative; z-index: 2;">
+        <div style="max-width: 650px;">
+            <div class="label-mono" style="margin-bottom: 0.5rem;"><i class="bi bi-shield-check me-1"></i>Hệ thống đã xác minh</div>
+            <h1 class="display-lg" style="margin-bottom: 1rem; color: var(--black);">Cửa hàng đối tác</h1>
+            <p style="color: var(--grey); font-size: 0.95rem; margin-bottom: 1.5rem; line-height: 1.5;">
+                Tìm kiếm và kết nối trực tiếp với các đơn vị dịch vụ lắp đặt, sửa chữa và đại lý phân phối điện lạnh uy tín trên toàn quốc.
+            </p>
+        </div>
+        
+        <!-- Search & Filter Form -->
+        <div style="background: var(--white); border: 1px solid var(--grey-dark); border-radius: var(--radius-md); padding: 1.25rem; box-shadow: var(--shadow-card);">
+            <form method="get" action="/stores">
+                <div style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 0.75rem; align-items: center;">
+                    
+                    <!-- Keyword input -->
+                    <div style="position: relative;">
+                        <input type="text" name="Keyword" value="@filter.Keyword" 
+                               style="width: 100%; padding: 12px 14px 12px 38px; border: 1px solid var(--grey-dark); background: var(--charcoal); border-radius: var(--radius-sm); font-family: var(--font-main); font-size: 0.875rem; color: var(--black); outline: none; transition: var(--transition);"
+                               placeholder="Tên cửa hàng, địa chỉ, quận huyện..."
+                               onfocus="this.style.borderColor='var(--neon)'; this.style.background='var(--white)';" 
+                               onblur="this.style.borderColor='var(--grey-dark)'; this.style.background='var(--charcoal)';" />
+                        <i class="bi bi-search" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--grey-mid); font-size: 0.9rem;"></i>
+                    </div>
+
+                    <!-- Province input -->
+                    <div style="position: relative;">
+                        <input type="text" name="Province" value="@filter.Province" 
+                               style="width: 100%; padding: 12px 14px 12px 38px; border: 1px solid var(--grey-dark); background: var(--charcoal); border-radius: var(--radius-sm); font-family: var(--font-main); font-size: 0.875rem; color: var(--black); outline: none; transition: var(--transition);"
+                               placeholder="Tỉnh / Thành phố"
+                               onfocus="this.style.borderColor='var(--neon)'; this.style.background='var(--white)';" 
+                               onblur="this.style.borderColor='var(--grey-dark)'; this.style.background='var(--charcoal)';" />
+                        <i class="bi bi-geo-alt" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--grey-mid); font-size: 0.9rem;"></i>
+                    </div>
+
+                    <!-- Brand input -->
+                    <div style="position: relative;">
+                        <input type="text" name="Brand" value="@filter.Brand" 
+                               style="width: 100%; padding: 12px 14px 12px 38px; border: 1px solid var(--grey-dark); background: var(--charcoal); border-radius: var(--radius-sm); font-family: var(--font-main); font-size: 0.875rem; color: var(--black); outline: none; transition: var(--transition);"
+                               placeholder="Thương hiệu hãng"
+                               onfocus="this.style.borderColor='var(--neon)'; this.style.background='var(--white)';" 
+                               onblur="this.style.borderColor='var(--grey-dark)'; this.style.background='var(--charcoal)';" />
+                        <i class="bi bi-lightning-charge" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--grey-mid); font-size: 0.9rem;"></i>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="btn btn-neon" style="padding: 12px 24px;">
+                        <i class="bi bi-funnel me-1"></i> Lọc
+                    </button>
+                    
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+
+<!-- Content Layout -->
+<section class="section-pad-sm" style="background: var(--white);">
+    <div class="container">
+        <div style="display: grid; grid-template-columns: 280px 1fr; gap: 2.5rem; align-items: start;">
+            
+            <!-- Technical Filter Sidebar -->
+            <aside style="border-right: 1px solid var(--grey-dark); padding-right: 2rem;">
+                <!-- Section title -->
+                <div class="label-mono" style="margin-bottom: 1.25rem; font-size: 0.7rem; color: var(--grey-mid);">Sắp xếp kết quả</div>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 2rem;">
+                    @foreach (var (val, label) in new[] { ("name","Tên A - Z"), ("rating","Đánh giá cao nhất"), ("reviews","Nhiều đánh giá"), ("joined","Thành viên mới") })
+                    {
+                        <a href="?Keyword=@filter.Keyword&Province=@filter.Province&Brand=@filter.Brand&SortBy=@val"
+                           style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; font-size: 0.85rem; font-weight: 550; border-radius: var(--radius-sm); transition: var(--transition); @(filter.SortBy == val ? "background: var(--charcoal); color: var(--neon);" : "color: var(--grey);")"
+                           onmouseover="this.style.background='var(--charcoal)';"
+                           onmouseout="this.style.background='@(filter.SortBy == val ? "var(--charcoal)" : "transparent")';">
+                            <span>@label</span>
+                            @if (filter.SortBy == val)
+                            {
+                                <i class="bi bi-check" style="font-size: 1.1rem;"></i>
+                            }
+                        </a>
+                    }
+                </div>
+
+                <div class="label-mono" style="margin-bottom: 1.25rem; font-size: 0.7rem; color: var(--grey-mid);">Đánh giá khách hàng</div>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    <a href="?Keyword=@filter.Keyword&Province=@filter.Province&Brand=@filter.Brand&SortBy=@filter.SortBy"
+                       style="display: flex; align-items: center; padding: 10px 12px; font-size: 0.85rem; font-weight: 550; border-radius: var(--radius-sm); transition: var(--transition); @(filter.MinRating == null ? "background: var(--charcoal); color: var(--neon);" : "color: var(--grey);")"
+                       onmouseover="this.style.background='var(--charcoal)';"
+                       onmouseout="this.style.background='@(filter.MinRating == null ? "var(--charcoal)" : "transparent")';">
+                        <span>Tất cả đánh giá</span>
+                    </a>
+                    
+                    @foreach (var r in new[] { 4.5, 4.0, 3.5 })
+                    {
+                        <a href="?Keyword=@filter.Keyword&Province=@filter.Province&Brand=@filter.Brand&SortBy=@filter.SortBy&MinRating=@r"
+                           style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; font-size: 0.85rem; font-weight: 550; border-radius: var(--radius-sm); transition: var(--transition); @(filter.MinRating == r ? "background: var(--charcoal); color: var(--neon);" : "color: var(--grey);")"
+                           onmouseover="this.style.background='var(--charcoal)';"
+                           onmouseout="this.style.background='@(filter.MinRating == r ? "var(--charcoal)" : "transparent")';">
+                            <span style="display: inline-flex; color: var(--accent-gold);">
+                                @for (int i = 1; i <= 5; i++)
+                                {
+                                    <i class="bi bi-star@(i <= r ? "-fill" : "")" style="font-size: 0.75rem;"></i>
+                                }
+                            </span>
+                            <span style="font-family: var(--font-mono); font-size: 0.75rem;">@r+</span>
+                        </a>
+                    }
+                </div>
+            </aside>
+
+            <!-- Store Cards Display Grid -->
+            <div>
+                <!-- Metadata stats -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--grey-dark);">
+                    <div style="font-size: 0.9rem; color: var(--grey);">
+                        Tìm thấy <strong style="color: var(--black); font-weight: 600;">@Model.TotalCount</strong> đối tác cửa hàng
+                    </div>
+                    <div class="label-mono" style="font-size: 0.7rem; color: var(--grey-mid);">
+                        Trang @Model.Page / @Model.TotalPages
+                    </div>
+                </div>
+
+                <!-- Main Content Grid -->
+                @if (!Model.Items.Any())
+                {
+                    <div style="text-align: center; padding: 5rem 2rem; border: 1px dashed var(--grey-dark); border-radius: var(--radius-md);">
+                        <i class="bi bi-shop-window" style="font-size: 2.5rem; color: var(--grey-mid); display: block; margin-bottom: 1rem;"></i>
+                        <h4 style="font-weight: 700; color: var(--black); margin-bottom: 0.5rem;">Không tìm thấy cửa hàng</h4>
+                        <p style="color: var(--grey-mid); font-size: 0.875rem; margin-bottom: 1.5rem;">Thử thay đổi từ khóa hoặc bộ lọc tìm kiếm khác.</p>
+                        <a href="/stores" class="btn btn-outline" style="padding: 10px 20px;">Xem tất cả</a>
+                    </div>
+                }
+                else
+                {
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 1.5rem;">
+                        @foreach (var store in Model.Items)
+                        {
+                            <div class="store-card" style="background: var(--white); border: 1px solid var(--grey-dark); border-radius: var(--radius-md); overflow: hidden; display: flex; flex-direction: column; transition: var(--transition);"
+                                 onmouseover="this.style.transform='translateY(-4px)'; this.style.borderColor='var(--neon)'; this.style.boxShadow='var(--shadow-neon)';"
+                                 onmouseout="this.style.transform='none'; this.style.borderColor='var(--grey-dark)'; this.style.boxShadow='none';">
+                                
+                                <!-- Cover area -->
+                                <div style="height: 100px; position: relative; background: var(--charcoal); overflow: hidden;">
+                                    @if (!string.IsNullOrEmpty(store.CoverImageUrl))
+                                    {
+                                        <img src="@store.CoverImageUrl" style="width: 100%; height: 100%; object-fit: cover;" alt="@store.Name" />
+                                    }
+                                    else
+                                    {
+                                        <!-- Tech pattern cover fallback -->
+                                        <div style="width: 100%; height: 100%; background: linear-gradient(135deg, rgba(13,148,136,0.1), rgba(17,17,17,0.05)); display: flex; align-items: center; justify-content: center; position: relative;">
+                                            <div style="position: absolute; inset: 0; background-image: radial-gradient(rgba(0,0,0,0.05) 1px, transparent 1px); background-size: 8px 8px;"></div>
+                                        </div>
+                                    }
+
+                                    <!-- Logo wrap float -->
+                                    <div style="position: absolute; bottom: -20px; left: 16px; width: 50px; height: 50px; border-radius: var(--radius-sm); border: 2px solid var(--white); background: var(--white); box-shadow: var(--shadow-card); overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                                        @if (!string.IsNullOrEmpty(store.LogoUrl))
+                                        {
+                                            <img src="@store.LogoUrl" style="width: 100%; height: 100%; object-fit: cover;" alt="Logo @store.Name" />
+                                        }
+                                        else
+                                        {
+                                            <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: var(--neon); color: var(--white); font-weight: 700; font-size: 1.15rem; font-family: var(--font-main);">
+                                                @store.Name.Substring(0, 1).ToUpper()
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+
+                                <!-- Body -->
+                                <div style="padding: 1.75rem 1.25rem 1.25rem; display: flex; flex-direction: column; flex-grow: 1;">
+                                    
+                                    <!-- Store Title -->
+                                    <h3 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.35rem; line-height: 1.2;">
+                                        <a href="/stores/@store.Slug" style="color: var(--black); transition: var(--transition);"
+                                           onmouseover="this.style.color='var(--neon)';"
+                                           onmouseout="this.style.color='var(--black)';">
+                                            @store.Name
+                                        </a>
+                                    </h3>
+
+                                    <!-- Rating -->
+                                    <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 0.5rem;">
+                                        <div style="color: var(--accent-gold); display: inline-flex; gap: 2px;">
+                                            @for (int i = 1; i <= 5; i++)
+                                            {
+                                                <i class="bi bi-star@(i <= (store.AverageRating ?? 0) ? "-fill" : i - 0.5 <= (store.AverageRating ?? 0) ? "-half" : "")" style="font-size: 0.75rem;"></i>
+                                            }
+                                        </div>
+                                        <span style="font-family: var(--font-mono); font-size: 0.7rem; color: var(--grey-mid);">
+                                            @store.AverageRating?.ToString("F1") (@store.TotalReviews)
+                                        </span>
+                                    </div>
+
+                                    <!-- Address -->
+                                    <div style="font-size: 0.78rem; color: var(--grey); margin-bottom: 1rem; display: flex; align-items: center; gap: 4px;">
+                                        <i class="bi bi-geo-alt" style="color: var(--neon);"></i>
+                                        <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@store.District, @store.Province</span>
+                                    </div>
+
+                                    <!-- Brands supported -->
+                                    @if (store.BrandNames.Any())
+                                    {
+                                        <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 1.25rem; margin-top: auto;">
+                                            @foreach (var brand in store.BrandNames.Take(3))
+                                            {
+                                                <span style="font-family: var(--font-mono); font-size: 0.62rem; color: var(--neon); background: rgba(13,148,136,0.06); border: 1px solid rgba(13,148,136,0.15); padding: 2px 6px; border-radius: 2px;">
+                                                    @brand
+                                                </span>
+                                            }
+                                            @if (store.BrandNames.Count > 3)
+                                            {
+                                                <span style="font-family: var(--font-mono); font-size: 0.62rem; color: var(--grey-mid); background: var(--charcoal); border: 1px solid var(--grey-dark); padding: 2px 6px; border-radius: 2px;">
+                                                    +@(store.BrandNames.Count - 3)
+                                                </span>
+                                            }
+                                        </div>
+                                    }
+
+                                    <!-- View Action -->
+                                    <a href="/stores/@store.Slug" class="btn btn-outline" style="width: 100%; text-align: center; justify-content: center; padding: 10px; font-size: 0.75rem; border-color: var(--grey-dark);">
+                                        <i class="bi bi-shop me-1" style="font-size: 0.85rem;"></i> Chi tiết
+                                    </a>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Technical Pagination -->
+                    @if (Model.TotalPages > 1)
+                    {
+                        <div style="display: flex; justify-content: center; gap: 6px; margin-top: 3rem;">
+                            @if (Model.HasPreviousPage)
+                            {
+                                <a href="?Keyword=@filter.Keyword&Province=@filter.Province&Brand=@filter.Brand&SortBy=@filter.SortBy&MinRating=@filter.MinRating&Page=@(Model.Page - 1)"
+                                   style="display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border: 1px solid var(--grey-dark); border-radius: var(--radius-sm); color: var(--grey); transition: var(--transition);"
+                                   onmouseover="this.style.borderColor='var(--neon)'; this.style.color='var(--neon)';"
+                                   onmouseout="this.style.borderColor='var(--grey-dark)'; this.style.color='var(--grey)';">
+                                    <i class="bi bi-chevron-left"></i>
+                                </a>
+                            }
+                            @for (int p = Math.Max(1, Model.Page - 2); p <= Math.Min(Model.TotalPages, Model.Page + 2); p++)
+                            {
+                                <a href="?Keyword=@filter.Keyword&Province=@filter.Province&Brand=@filter.Brand&SortBy=@filter.SortBy&MinRating=@filter.MinRating&Page=@p"
+                                   style="display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border: 1px solid @(p == Model.Page ? "var(--neon)" : "var(--grey-dark)"); border-radius: var(--radius-sm); font-weight: 600; font-size: 0.85rem; transition: var(--transition); @(p == Model.Page ? "background: var(--neon); color: var(--white);" : "color: var(--grey);")"
+                                   onmouseover="@(p != Model.Page ? "this.style.borderColor='var(--neon)'; this.style.color='var(--neon)';" : "")"
+                                   onmouseout="@(p != Model.Page ? "this.style.borderColor='var(--grey-dark)'; this.style.color='var(--grey)';" : "")">
+                                    @p
+                                </a>
+                            }
+                            @if (Model.HasNextPage)
+                            {
+                                <a href="?Keyword=@filter.Keyword&Province=@filter.Province&Brand=@filter.Brand&SortBy=@filter.SortBy&MinRating=@filter.MinRating&Page=@(Model.Page + 1)"
+                                   style="display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border: 1px solid var(--grey-dark); border-radius: var(--radius-sm); color: var(--grey); transition: var(--transition);"
+                                   onmouseover="this.style.borderColor='var(--neon)'; this.style.color='var(--neon)';"
+                                   onmouseout="this.style.borderColor='var(--grey-dark)'; this.style.color='var(--grey)';">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            }
+                        </div>
+                    }
+                }
+            </div>
+
+        </div>
+    </div>
+</section>

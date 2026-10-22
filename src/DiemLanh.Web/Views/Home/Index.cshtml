@@ -1,0 +1,550 @@
+@{
+    ViewData["Title"] = "CoolConnect – Marketplace Điện Lạnh Hàng Đầu";
+    var featuredStores = ViewBag.FeaturedStores as IEnumerable<DiemLanh.Application.DTOs.Store.StoreListDto> ?? Enumerable.Empty<DiemLanh.Application.DTOs.Store.StoreListDto>();
+    var categories = ViewBag.Categories as IEnumerable<DiemLanh.Application.DTOs.Product.ProductCategoryDto> ?? Enumerable.Empty<DiemLanh.Application.DTOs.Product.ProductCategoryDto>();
+}
+
+@section Head {
+<meta name="description" content="CoolConnect – Nền tảng marketplace kết nối bạn với hàng trăm cửa hàng điện lạnh uy tín. Mua điều hòa, máy giặt, tủ lạnh, bảo hành & sửa chữa tại nhà.">
+<meta property="og:title" content="CoolConnect – Marketplace Điện Lạnh Hàng Đầu">
+<link rel="canonical" href="/" />
+}
+
+<!-- =========================================================
+     HERO SECTION
+     ========================================================= -->
+<section class="hero" id="hero">
+    <div class="hero-bg">
+        <img src="/images/hero-banner.png" alt="Công nghệ điện lạnh hiện đại" loading="eager" />
+    </div>
+    <div class="hero-grid-overlay"></div>
+    <div class="hero-gradient"></div>
+
+    <div class="container hero-content">
+        <div class="hero-tag" data-animate>
+            <span class="dot"></span>
+            CoolConnect Marketplace Việt Nam
+        </div>
+        <h1 class="hero-headline" data-animate>
+            <span class="d-block">Công nghệ</span>
+            <span class="d-block line-accent">Làm mát</span>
+            <span class="d-block">Tương lai</span>
+        </h1>
+        <p class="hero-sub" data-animate>
+            Kết nối với 200+ cửa hàng điện lạnh uy tín. Tư vấn AI 24/7, lắp đặt tại nhà, bảo hành chính hãng toàn quốc.
+        </p>
+        <div class="hero-cta-row" data-animate>
+            <a href="/stores" class="btn btn-neon" id="hero-explore-btn">
+                <i class="bi bi-search"></i> Tìm cửa hàng
+            </a>
+            <a href="#ai-chat" class="btn btn-outline" id="hero-ai-btn">
+                <i class="bi bi-robot"></i> Hỏi AI tư vấn
+            </a>
+        </div>
+        <div class="hero-stats" data-animate>
+            <div class="hero-stat">
+                <div class="hero-stat-num" id="stat-stores">0</div>
+                <div class="hero-stat-label">Cửa hàng</div>
+            </div>
+            <div class="hero-stat">
+                <div class="hero-stat-num" id="stat-products">0</div>
+                <div class="hero-stat-label">Sản phẩm</div>
+            </div>
+            <div class="hero-stat">
+                <div class="hero-stat-num" id="stat-orders">0</div>
+                <div class="hero-stat-label">Đơn hoàn thành</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- =========================================================
+     TICKER
+     ========================================================= -->
+<div class="ticker" aria-hidden="true">
+    <div class="ticker-inner" id="ticker">
+        @{
+            var tickerItems = new[] {
+                "Điều Hòa Inverter", "Máy Giặt Lồng Ngang", "Tủ Lạnh Side-by-Side",
+                "Bình Nóng Lạnh", "Máy Lọc Nước RO", "Lắp Đặt Tại Nhà",
+                "Bảo Hành Chính Hãng", "Sửa Chữa 24/7", "Kỹ Thuật Viên Chứng Nhận",
+                "Điều Hòa Daikin", "LG ThinQ", "Samsung WindFree"
+            };
+        }
+        @for (int i = 0; i < 2; i++)
+        {
+            foreach (var item in tickerItems)
+            {
+                <span class="ticker-item">@item</span>
+            }
+        }
+    </div>
+</div>
+
+<!-- =========================================================
+     DANH MỤC SẢN PHẨM
+     ========================================================= -->
+<section class="section-pad" id="categories">
+    <div class="container">
+        <div class="section-eyebrow">
+            <span class="label-mono">Danh Mục</span>
+        </div>
+        <div class="d-flex justify-content-between align-items-end mb-4 flex-wrap gap-3">
+            <h2 class="display-md">Thiết bị<br /><span class="text-neon">Điện lạnh</span></h2>
+            <a href="/products" class="btn btn-outline">Xem tất cả <i class="bi bi-arrow-right"></i></a>
+        </div>
+    </div>
+
+    <div class="container">
+        @{
+            var catIcons = new Dictionary<string, string>
+            {
+                {"Điều hòa", "bi-wind"},
+                {"Máy giặt", "bi-badge-wc"},
+                {"Tủ lạnh", "bi-box"},
+                {"Bình nóng lạnh", "bi-droplet-fill"},
+                {"Máy lọc nước", "bi-funnel"},
+                {"Máy sấy", "bi-thermometer-sun"},
+                {"Quạt điều hòa", "bi-fan"},
+                {"Máy hút ẩm", "bi-cloud"},
+                {"Lò vi sóng", "bi-circle-square"},
+            };
+        }
+        <div class="categories-grid" data-animate>
+            @if (categories.Any())
+            {
+                int ci = 0;
+                foreach (var cat in categories.Take(6))
+                {
+                    var icon = catIcons.ContainsKey(cat.Name) ? catIcons[cat.Name] : "bi-lightning";
+                    ci++;
+                    <a href="/products?CategorySlug=@cat.Slug" class="cat-card" id="cat-@ci">
+                        <i class="bi @icon cat-icon"></i>
+                        <div class="cat-name">@cat.Name</div>
+                        <div class="cat-count">@cat.ProductCount+ SP</div>
+                    </a>
+                }
+            }
+            else
+            {
+                @* Fallback categories *@
+                var fallback = new[] {
+                    ("bi-wind","Điều Hòa","120+ SP"),
+                    ("bi-badge-wc","Máy Giặt","80+ SP"),
+                    ("bi-box","Tủ Lạnh","95+ SP"),
+                    ("bi-droplet-fill","Bình Nóng Lạnh","60+ SP"),
+                    ("bi-funnel","Máy Lọc Nước","45+ SP"),
+                    ("bi-thermometer-sun","Máy Sấy","30+ SP"),
+                };
+                int ci2 = 0;
+                foreach (var (icon, name, count) in fallback)
+                {
+                    ci2++;
+                    <a href="/products" class="cat-card" id="cat-f-@ci2">
+                        <i class="bi @icon cat-icon"></i>
+                        <div class="cat-name">@name</div>
+                        <div class="cat-count">@count</div>
+                    </a>
+                }
+            }
+        </div>
+    </div>
+</section>
+
+<!-- =========================================================
+     SẢN PHẨM NỔI BẬT
+     ========================================================= -->
+<section id="featured-products" style="background:var(--charcoal)">
+    <div class="products-layout">
+        <div class="products-sidebar" data-animate>
+            <div>
+                <div class="section-eyebrow">
+                    <span class="label-mono">Nổi Bật</span>
+                </div>
+                <h2 class="display-md" style="margin-bottom:1.5rem">
+                    Sản phẩm<br /><span class="text-neon">Hot nhất</span>
+                </h2>
+                <p style="color:var(--grey-mid);font-size:.9rem;line-height:1.8;margin-bottom:2rem">
+                    Các sản phẩm điện lạnh được đánh giá cao nhất từ các cửa hàng uy tín trên toàn quốc.
+                </p>
+            </div>
+            <div>
+                <a href="/products" class="btn btn-neon" style="margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;width:100%">
+                    Xem tất cả sản phẩm <i class="bi bi-arrow-right"></i>
+                </a>
+                <div style="display:flex;gap:8px">
+                    <div style="flex:1;padding:1rem;background:rgba(214,254,30,0.07);border:1px solid rgba(214,254,30,0.15);border-radius:var(--radius-sm)">
+                        <div style="font-size:1.25rem;font-weight:700;color:var(--neon)">200+</div>
+                        <div style="font-size:.65rem;color:var(--grey-mid);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.08em">Thương hiệu</div>
+                    </div>
+                    <div style="flex:1;padding:1rem;background:rgba(214,254,30,0.07);border:1px solid rgba(214,254,30,0.15);border-radius:var(--radius-sm)">
+                        <div style="font-size:1.25rem;font-weight:700;color:var(--neon)">5.000+</div>
+                        <div style="font-size:.65rem;color:var(--grey-mid);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.08em">Sản phẩm</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="products-grid">
+            @{
+                var featuredProducts = ViewBag.FeaturedProducts as IEnumerable<DiemLanh.Application.DTOs.Product.ProductCardDto> ?? Enumerable.Empty<DiemLanh.Application.DTOs.Product.ProductCardDto>();
+            }
+            @if (featuredProducts.Any())
+            {
+                foreach (var p in featuredProducts)
+                {
+                    var priceDisplay = p.SalePrice.HasValue ? p.SalePrice.Value.ToString("N0") + "đ" : p.Price.ToString("N0") + "đ";
+                    var oldPriceDisplay = p.SalePrice.HasValue ? p.Price.ToString("N0") + "đ" : null;
+                    <div class="product-card" onclick="location.href='/products/@p.Slug'" style="cursor:pointer; background:#ffffff; border:1px solid rgba(0,0,0,0.06); transition: transform 0.25s ease, box-shadow 0.25s ease;">
+                        @if (p.DiscountPercent > 0)
+                        {
+                            <div class="product-badge red">-@p.DiscountPercent%</div>
+                        }
+                        else if (p.IsFeatured)
+                        {
+                            <div class="product-badge">HOT</div>
+                        }
+                        <div class="product-card-img" style="background:#ffffff; display:flex; align-items:center; justify-content:center; height:180px; position:relative; overflow:hidden; border-radius:var(--radius-sm)">
+                            @if (!string.IsNullOrEmpty(p.MainImageUrl))
+                            {
+                                <img src="@p.MainImageUrl" alt="@p.Name" style="width:100%; height:100%; object-fit:contain; transition:transform .3s ease;" />
+                            }
+                            else
+                            {
+                                <i class="bi bi-wind" style="font-size:5rem; color:#ccc; opacity:.6"></i>
+                            }
+                        </div>
+                        <div class="product-brand" style="margin-top:12px; font-family:'DM Mono', monospace; font-size:0.75rem; font-weight:600; text-transform:uppercase; color:#0D9488;">@p.Brand</div>
+                        <div class="product-name" style="font-weight:600; font-size:0.9rem; line-height:1.4; margin:4px 0 8px; min-height:2.8em; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; color:#111111;">@p.Name</div>
+                        <div class="product-price-row" style="display:flex; align-items:center; gap:8px;">
+                            <span class="product-price" style="font-weight:700; color:#0D9488;">@priceDisplay</span>
+                            @if (oldPriceDisplay != null)
+                            {
+                                <span class="product-price-old" style="text-decoration:line-through; color:#9CA3AF; font-size:0.8rem;">@oldPriceDisplay</span>
+                            }
+                        </div>
+                        <div class="product-store-info" style="font-size:0.75rem; color:#9CA3AF; margin-top:8px; display:flex; justify-content:space-between; align-items:center; border-top:1px solid #E5E7EB; padding-top:8px;">
+                            <span><i class="bi bi-shop me-1"></i>@p.StoreName</span>
+                            <span><i class="bi bi-geo-alt me-1"></i>@p.StoreProvince</span>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                var demoProducts = new[]
+                {
+                    new { Brand="DAIKIN", Name="Điều Hòa Inverter FTKB35WAVMV 1.5HP", Price="9.500.000đ", OldPrice="12.000.000đ", Badge="HOT", BadgeType="", Icon="bi-wind" },
+                    new { Brand="LG", Name="Máy Giặt Lồng Ngang 10kg ThinQ AI F2515STGW", Price="15.200.000đ", OldPrice="18.500.000đ", Badge="-18%", BadgeType="red", Icon="bi-badge-wc" },
+                    new { Brand="SAMSUNG", Name="Tủ Lạnh 2 Cánh 300L Inverter RT29K5032S8", Price="8.900.000đ", OldPrice="", Badge="MỚI", BadgeType="", Icon="bi-box" },
+                    new { Brand="PANASONIC", Name="Bình Nóng Lạnh 30L DH-30HAM1V gián tiếp", Price="2.350.000đ", OldPrice="2.800.000đ", Badge="", BadgeType="", Icon="bi-droplet-fill" },
+                    new { Brand="MITSUBISHI", Name="Máy Lọc Nước RO Cleansui 3 lõi EU101", Price="4.800.000đ", OldPrice="5.500.000đ", Badge="", BadgeType="", Icon="bi-funnel" },
+                    new { Brand="SHARP", Name="Điều Hòa Inverter Plasma Cluster 18000BTU", Price="11.200.000đ", OldPrice="13.900.000đ", Badge="HOT", BadgeType="", Icon="bi-wind" },
+                };
+                foreach (var p in demoProducts)
+                {
+                    <div class="product-card">
+                        @if (!string.IsNullOrEmpty(p.Badge))
+                        {
+                            <div class="product-badge @p.BadgeType">@p.Badge</div>
+                        }
+                        <div class="product-card-img">
+                            <i class="bi @p.Icon" style="font-size:5rem;color:#ccc;opacity:.6"></i>
+                        </div>
+                        <div class="product-brand">@p.Brand</div>
+                        <div class="product-name">@p.Name</div>
+                        <div class="product-price-row">
+                            <span class="product-price">@p.Price</span>
+                            @if (!string.IsNullOrEmpty(p.OldPrice))
+                            {
+                                <span class="product-price-old">@p.OldPrice</span>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</section>
+
+<!-- =========================================================
+     CỬA HÀNG NỔI BẬT
+     ========================================================= -->
+<section class="section-pad" id="stores">
+    <div class="container">
+        <div class="stores-header" data-animate>
+            <div>
+                <div class="section-eyebrow"><span class="label-mono">Đối Tác</span></div>
+                <h2 class="display-md">Cửa hàng<br /><span class="text-neon">Uy tín</span></h2>
+            </div>
+            <a href="/stores" class="btn btn-outline" id="view-all-stores-btn">
+                Xem tất cả <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
+        <div class="stores-grid">
+            @{
+                var storeCovers = new[] { "/images/store-banner.png", "", "" };
+                var storeColors = new[] { "#D6FE1E", "#FF6B00", "#00D4FF" };
+                var storeBgs = new[] { "#111", "#1a0800", "#001a20" };
+                int si = 0;
+            }
+            @if (featuredStores.Any())
+            {
+                foreach (var store in featuredStores.Take(3))
+                {
+                    var initial = store.Name.Length > 0 ? store.Name[0].ToString().ToUpper() : "S";
+                    var col = storeColors[si % storeColors.Length];
+                    var bg = storeBgs[si % storeBgs.Length];
+                    <div class="store-card" id="store-card-@store.Id">
+                        <div class="store-card-cover">
+                            @if (!string.IsNullOrEmpty(store.CoverImageUrl))
+                            {
+                                <img src="@store.CoverImageUrl" alt="@store.Name" loading="lazy" />
+                            }
+                            else if (si == 0)
+                            {
+                                <img src="/images/store-banner.png" alt="@store.Name" loading="lazy" />
+                            }
+                            else
+                            {
+                                <div style="width:100%;height:100%;background:@bg;"></div>
+                            }
+                            <div class="store-card-cover-overlay"></div>
+                        </div>
+                        <div class="store-card-body">
+                            <div class="store-card-meta">
+                                @if (!string.IsNullOrEmpty(store.LogoUrl))
+                                {
+                                    <img src="@store.LogoUrl" alt="Logo @store.Name" style="width:40px;height:40px;border-radius:var(--radius-sm);object-fit:cover;margin-right:12px;" />
+                                }
+                                else
+                                {
+                                    <div class="store-card-logo" style="color:@col">@initial</div>
+                                }
+                                <div>
+                                    <div class="store-card-name">@store.Name</div>
+                                    <div class="store-card-location">
+                                        <i class="bi bi-geo-alt"></i>
+                                        @(store.Province ?? "Toàn quốc")
+                                        @if (!string.IsNullOrEmpty(store.District)) { <text>, @store.District</text> }
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="store-card-stats">
+                                <div class="store-stat-item">
+                                    <div class="store-stat-val">@store.AverageRating?.ToString("F1")⭐</div>
+                                    <div class="store-stat-lbl">Đánh giá</div>
+                                </div>
+                                <div class="store-stat-item">
+                                    <div class="store-stat-val">@store.TotalReviews</div>
+                                    <div class="store-stat-lbl">Đánh giá</div>
+                                </div>
+                            </div>
+                            @if (store.BrandNames?.Any() == true)
+                            {
+                                <div class="store-card-tags">
+                                    @foreach (var brand in store.BrandNames.Take(3))
+                                    {
+                                        <span class="store-tag">@brand</span>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    si++;
+                }
+            }
+            else
+            {
+                @* Demo stores *@
+                var demoStores = new[]
+                {
+                    new { Name="Điện Lạnh An Phát", Province="Hà Nội", Rating="4.9", Reviews="342", Brands=new[]{"Daikin","LG","Samsung"} },
+                    new { Name="Điện Máy Minh Tuấn", Province="TP.HCM", Rating="4.8", Reviews="218", Brands=new[]{"Panasonic","Mitsubishi","Toshiba"} },
+                    new { Name="Kỹ Thuật Điện Lạnh Hà", Province="Đà Nẵng", Rating="4.7", Reviews="156", Brands=new[]{"Sharp","Electrolux","Bosch"} },
+                };
+                int di = 0;
+                foreach (var ds in demoStores)
+                {
+                    var col = storeColors[di % storeColors.Length];
+                    var bg = storeBgs[di % storeBgs.Length];
+                    var initial2 = ds.Name[0].ToString();
+                    <div class="store-card">
+                        <div class="store-card-cover">
+                            @if (di == 0)
+                            {
+                                <img src="/images/store-banner.png" alt="@ds.Name" loading="lazy" />
+                            }
+                            else
+                            {
+                                <div style="width:100%;height:100%;background:@bg;"></div>
+                            }
+                            <div class="store-card-cover-overlay"></div>
+                        </div>
+                        <div class="store-card-body">
+                            <div class="store-card-meta">
+                                <div class="store-card-logo" style="color:@col">@initial2</div>
+                                <div>
+                                    <div class="store-card-name">@ds.Name</div>
+                                    <div class="store-card-location"><i class="bi bi-geo-alt"></i> @ds.Province</div>
+                                </div>
+                            </div>
+                            <div class="store-card-stats">
+                                <div class="store-stat-item">
+                                    <div class="store-stat-val">@ds.Rating⭐</div>
+                                    <div class="store-stat-lbl">Rating</div>
+                                </div>
+                                <div class="store-stat-item">
+                                    <div class="store-stat-val">@ds.Reviews</div>
+                                    <div class="store-stat-lbl">Đánh giá</div>
+                                </div>
+                            </div>
+                            <div class="store-card-tags">
+                                @foreach (var b in ds.Brands)
+                                {
+                                    <span class="store-tag">@b</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    di++;
+                }
+            }
+        </div>
+    </div>
+</section>
+
+<!-- =========================================================
+     TẠI SAO CHỌN CHÚNG TÔI
+     ========================================================= -->
+<section id="why-us" style="background:var(--charcoal)">
+    <div class="services-layout">
+        <div class="services-img-side" data-animate>
+            <img src="/images/store-banner.png" alt="Kỹ thuật viên điện lạnh chuyên nghiệp" loading="lazy" />
+            <div class="services-img-overlay">
+                <div>
+                    <div class="label-mono" style="margin-bottom:.75rem">Đội Ngũ Kỹ Thuật</div>
+                    <div style="font-size:2.5rem;font-weight:800;line-height:1;text-transform:uppercase">
+                        Chứng<br/>nhận<br/><span class="text-neon">Quốc gia</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="services-content" data-animate>
+            <div class="section-eyebrow">
+                <span class="label-mono">Cam Kết</span>
+            </div>
+            <h2 class="display-md" style="margin-bottom:2.5rem">
+                Tại sao<br/><span class="text-neon">Chọn chúng tôi</span>
+            </h2>
+            <div class="service-item">
+                <div class="service-num">01</div>
+                <div class="service-text">
+                    <h4>AI Tư Vấn 24/7</h4>
+                    <p>Chatbot AI phân tích nhu cầu, tư vấn sản phẩm phù hợp nhất với diện tích phòng và ngân sách của bạn.</p>
+                </div>
+            </div>
+            <div class="service-item">
+                <div class="service-num">02</div>
+                <div class="service-text">
+                    <h4>Lắp Đặt Chuẩn Kỹ Thuật</h4>
+                    <p>Đội ngũ kỹ thuật viên được đào tạo và chứng nhận bởi các hãng lớn. Lắp đặt đúng quy trình, an toàn.</p>
+                </div>
+            </div>
+            <div class="service-item">
+                <div class="service-num">03</div>
+                <div class="service-text">
+                    <h4>Bảo Hành Toàn Diện</h4>
+                    <p>Theo dõi bảo hành trực tuyến, nhắc nhở bảo dưỡng định kỳ và hỗ trợ sửa chữa nhanh chóng.</p>
+                </div>
+            </div>
+            <div class="service-item">
+                <div class="service-num">04</div>
+                <div class="service-text">
+                    <h4>So Sánh Giá Minh Bạch</h4>
+                    <p>Xem giá từ nhiều cửa hàng, đánh giá thực của người dùng. Không phí ẩn, không thêm chi phí trung gian.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- =========================================================
+     TESTIMONIALS
+     ========================================================= -->
+<section class="section-pad" id="reviews">
+    <div class="container">
+        <div class="section-eyebrow"><span class="label-mono">Đánh Giá</span></div>
+        <h2 class="display-md" style="margin-bottom:3rem" data-animate>
+            Khách hàng<br/><span class="text-neon">Nói gì?</span>
+        </h2>
+        <div class="testimonials-track">
+            <div class="testimonial-card" data-animate>
+                <div class="testimonial-stars">★★★★★</div>
+                <p class="testimonial-text">"Đặt hàng điều hòa Daikin trên CoolConnect, được tư vấn rất tận tình. Kỹ thuật viên đến lắp đúng hẹn, gọn gàng. Máy hoạt động êm ái, tiết kiệm điện thấy rõ."</p>
+                <div class="testimonial-author">
+                    <div class="testimonial-avatar" style="background:#2a4a2a;color:var(--neon)">N</div>
+                    <div>
+                        <div class="testimonial-name">Nguyễn Văn Hùng</div>
+                        <div class="testimonial-meta">Hà Nội // Điều hòa Daikin 1.5HP</div>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card" data-animate>
+                <div class="testimonial-stars">★★★★★</div>
+                <p class="testimonial-text">"Chatbot AI trên web tư vấn cho tôi chọn máy giặt phù hợp với gia đình 5 người. Cửa hàng giao hàng nhanh, lắp đặt trong 30 phút. Rất hài lòng!"</p>
+                <div class="testimonial-author">
+                    <div class="testimonial-avatar" style="background:#1a1a3a;color:#7eb8ff">T</div>
+                    <div>
+                        <div class="testimonial-name">Trần Thị Lan</div>
+                        <div class="testimonial-meta">TP.HCM // Máy giặt LG 10kg</div>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card" data-animate>
+                <div class="testimonial-stars">★★★★☆</div>
+                <p class="testimonial-text">"Tìm thợ sửa điều hòa trên app rất tiện. Chỉ cần mô tả triệu chứng, AI gợi ý đúng vấn đề và kỹ thuật viên đến kiểm tra xác nhận. Phí dịch vụ rõ ràng, không bị chặt chém."</p>
+                <div class="testimonial-author">
+                    <div class="testimonial-avatar" style="background:#3a1a00;color:#ff9944">P</div>
+                    <div>
+                        <div class="testimonial-name">Phạm Minh Đức</div>
+                        <div class="testimonial-meta">Đà Nẵng // Sửa chữa máy lạnh</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- =========================================================
+     AI CHATBOT BAND
+     ========================================================= -->
+<div class="cta-band" id="ai-chat">
+    <div class="container">
+        <div class="cta-band-inner">
+            <h2>Chưa biết<br/>chọn gì? Hỏi AI</h2>
+            <div class="cta-band-actions">
+                <a href="/chat" class="btn btn-dark btn-lg" id="cta-ai-btn">
+                    <i class="bi bi-robot me-2"></i>Hỏi AI ngay
+                </a>
+                <a href="/stores" class="btn btn-outline-dark btn-lg" id="cta-browse-btn">
+                    <i class="bi bi-shop me-2"></i>Duyệt cửa hàng
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- =========================================================
+     BRANDS STRIP
+     ========================================================= -->
+<section class="section-pad-sm" style="background:var(--charcoal);border-top:1px solid rgba(255,255,255,.06)">
+    <div class="container">
+        <div class="label-mono" style="text-align:center;margin-bottom:2rem">Thương Hiệu Đối Tác</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:3rem;flex-wrap:wrap;opacity:.5;filter:grayscale(1)">
+            @foreach (var brand in new[] {"DAIKIN","SAMSUNG","LG","PANASONIC","MITSUBISHI","TOSHIBA","SHARP","ELECTROLUX"})
+            {
+                <div style="font-size:1.1rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--white)">@brand</div>
+            }
+        </div>
+    </div>
+</section>

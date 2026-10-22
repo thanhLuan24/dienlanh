@@ -1,0 +1,31 @@
+@{
+    ViewData["Title"] = "Chưa liên kết cửa hàng";
+    Layout = "_StoreLayout";
+    ViewData["ActivePage"] = "";
+}
+
+<div style="display:flex;align-items:center;justify-content:center;min-height:60vh;padding:2rem">
+    <div style="text-align:center;max-width:480px">
+        <div style="width:80px;height:80px;background:rgba(245,158,11,.1);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem;font-size:2rem;color:#f59e0b">
+            <i class="bi bi-shop"></i>
+        </div>
+        <h2 style="font-weight:800;margin-bottom:.75rem">Chưa liên kết cửa hàng</h2>
+        <p style="color:#64748b;margin-bottom:2rem;line-height:1.6">
+            Tài khoản của bạn có vai trò <strong>Chủ cửa hàng</strong> nhưng chưa được liên kết với cửa hàng nào trong hệ thống.<br />
+            Vui lòng liên hệ Admin để được gán cửa hàng.
+        </p>
+        <div style="background:#f1f5f9;border-radius:12px;padding:1.25rem;margin-bottom:2rem;text-align:left">
+            <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#64748b;margin-bottom:.75rem">Hướng dẫn cho Admin:</div>
+            <ol style="margin:0;padding-left:1.25rem;font-size:.85rem;color:#334155;line-height:1.8">
+                <li>Đăng nhập trang Admin</li>
+                <li>Vào mục <strong>Người dùng</strong></li>
+                <li>Tìm tài khoản này và chọn <strong>StoreOwner</strong></li>
+                <li>Chọn cửa hàng cần liên kết từ danh sách</li>
+                <li>Nhấn cập nhật</li>
+            </ol>
+        </div>
+        <a href="/" class="btn btn-primary">
+            <i class="bi bi-house me-1"></i> Về trang chủ
+        </a>
+    </div>
+</div>

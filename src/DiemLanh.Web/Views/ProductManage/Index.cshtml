@@ -1,0 +1,245 @@
+@model DiemLanh.Application.Common.PagedResult<DiemLanh.Application.DTOs.Product.ProductListDto>
+@{
+    ViewData["Title"] = "Quản lý Sản phẩm";
+    ViewData["ActivePage"] = "Products";
+    Layout = "_StoreLayout";
+    var filter = ViewBag.Filter as DiemLanh.Application.DTOs.Product.ProductFilterDto ?? new();
+    var categories = ViewBag.Categories as IEnumerable<DiemLanh.Application.DTOs.Product.ProductCategoryDto> ?? Enumerable.Empty<DiemLanh.Application.DTOs.Product.ProductCategoryDto>();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1 fw-bold">Quản lý Sản phẩm</h4>
+        <p class="text-muted mb-0">Tổng cộng @Model.TotalCount sản phẩm</p>
+    </div>
+    <a href="/manage/products/create" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i>Thêm sản phẩm
+    </a>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" action="/manage/products/index">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <input type="text" name="Keyword" value="@filter.Keyword" class="form-control" placeholder="Tên sản phẩm, thương hiệu..." />
+                </div>
+                <div class="col-md-2">
+                    @{
+                        var catOptions = "<select name='CategoryId' class='form-select'><option value=''>-- Danh mục --</option>";
+                        foreach (var c in categories)
+                            catOptions += $"<option value='{c.Id}'{(filter.CategoryId == c.Id ? " selected" : "")}>{c.Name}</option>";
+                        catOptions += "</select>";
+                    }
+                    @Html.Raw(catOptions)
+                </div>
+                <div class="col-md-2">
+                    <input type="text" name="Brand" value="@filter.Brand" class="form-control" placeholder="Hãng..." />
+                </div>
+                <div class="col-md-2">
+                    @{
+                        var statusOpts = "<select name='Status' class='form-select'><option value=''>-- Trạng thái --</option>";
+                        statusOpts += $"<option value='0'{(filter.Status.HasValue && (int)filter.Status.Value == 0 ? " selected" : "")}>Hoạt động</option>";
+                        statusOpts += $"<option value='1'{(filter.Status.HasValue && (int)filter.Status.Value == 1 ? " selected" : "")}>Hết hàng</option>";
+                        statusOpts += $"<option value='2'{(filter.Status.HasValue && (int)filter.Status.Value == 2 ? " selected" : "")}>Ngừng bán</option>";
+                        statusOpts += "</select>";
+                    }
+                    @Html.Raw(statusOpts)
+                </div>
+                <div class="col-md-3">
+                    <div class="input-group">
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-search me-1"></i>Tìm</button>
+                        <a href="/manage/products/index" class="btn btn-outline-secondary">Xóa lọc</a>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Products Table -->
+<div class="card">
+    <div class="card-body p-0">
+        @if (!Model.Items.Any())
+        {
+            <div class="text-center text-muted py-5">
+                <i class="bi bi-box fs-1 d-block mb-3"></i>
+                <p>Chưa có sản phẩm nào. <a href="/manage/products/create">Thêm sản phẩm đầu tiên</a></p>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width:60px">Ảnh</th>
+                            <th>Sản phẩm</th>
+                            <th>Hãng / Danh mục</th>
+                            <th>Giá</th>
+                            <th>Tồn kho</th>
+                            <th>Trạng thái</th>
+                            <th>Đã bán</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var p in Model.Items)
+                        {
+                            <tr>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(p.MainImageUrl))
+                                    {
+                                        <img src="@p.MainImageUrl" alt="@p.Name" style="width:50px;height:50px;object-fit:cover;border-radius:8px;" />
+                                    }
+                                    else
+                                    {
+                                        <div style="width:50px;height:50px;background:#f1f5f9;border-radius:8px;display:flex;align-items:center;justify-content:center;">
+                                            <i class="bi bi-image text-muted"></i>
+                                        </div>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="fw-semibold">@p.Name</div>
+                                    @if (!string.IsNullOrEmpty(p.Model))
+                                    {
+                                        <small class="text-muted">@p.Model</small>
+                                    }
+                                    @if (p.IsHidden)
+                                    {
+                                        <span class="badge bg-secondary ms-1" style="font-size:.6rem">Ẩn</span>
+                                    }
+                                    @if (p.IsFeatured)
+                                    {
+                                        <span class="badge bg-warning ms-1" style="font-size:.6rem"><i class="bi bi-star-fill"></i></span>
+                                    }
+                                </td>
+                                <td>
+                                    <div>@p.Brand</div>
+                                    <small class="text-muted">@p.CategoryName</small>
+                                </td>
+                                <td>
+                                    @if (p.SalePrice.HasValue && p.SalePrice < p.Price)
+                                    {
+                                        <div class="fw-bold text-danger">@p.SalePrice.Value.ToString("N0")đ</div>
+                                        <small class="text-muted text-decoration-line-through">@p.Price.ToString("N0")đ</small>
+                                    }
+                                    else
+                                    {
+                                        <div class="fw-bold">@p.Price.ToString("N0")đ</div>
+                                    }
+                                </td>
+                                <td>
+                                    @if (p.Stock == 0)
+                                    {
+                                        <span class="badge bg-danger-subtle text-danger">Hết hàng</span>
+                                    }
+                                    else if (p.Stock <= 5)
+                                    {
+                                        <span class="badge bg-warning-subtle text-warning">Còn @p.Stock</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success-subtle text-success">@p.Stock</span>
+                                    }
+                                </td>
+                                <td>
+                                    @{
+                                        var statusCls = p.Status switch
+                                        {
+                                            DiemLanh.Domain.Enums.ProductStatus.Active => "success",
+                                            DiemLanh.Domain.Enums.ProductStatus.OutOfStock => "danger",
+                                            DiemLanh.Domain.Enums.ProductStatus.Discontinued => "secondary",
+                                            _ => "secondary"
+                                        };
+                                        var statusName = p.Status switch
+                                        {
+                                            DiemLanh.Domain.Enums.ProductStatus.Active => "Hoạt động",
+                                            DiemLanh.Domain.Enums.ProductStatus.OutOfStock => "Hết hàng",
+                                            DiemLanh.Domain.Enums.ProductStatus.Discontinued => "Ngừng bán",
+                                            _ => "Không rõ"
+                                        };
+                                    }
+                                    <span class="badge bg-@statusCls-subtle text-@statusCls">@statusName</span>
+                                </td>
+                                <td class="fw-semibold">@p.SoldCount</td>
+                                <td>
+                                    <div class="d-flex gap-1">
+                                        <a href="/manage/products/edit/@p.Id" class="btn btn-sm btn-outline-primary" title="Sửa">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <button class="btn btn-sm btn-outline-secondary" title="Ẩn/Hiện"
+                                                onclick="toggleHidden(@p.Id, this)">
+                                            <i class="bi bi-eye@(p.IsHidden ? "-slash" : "")"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" title="Xóa"
+                                                onclick="confirmDelete(@p.Id)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (Model.TotalPages > 1)
+            {
+                <div class="card-footer">
+                    <nav>
+                        <ul class="pagination pagination-sm justify-content-center mb-0">
+                            @if (Model.HasPreviousPage)
+                            {
+                                <li class="page-item"><a class="page-link" href="?Page=@(Model.Page-1)"><i class="bi bi-chevron-left"></i></a></li>
+                            }
+                            @for (int p2 = Math.Max(1, Model.Page - 2); p2 <= Math.Min(Model.TotalPages, Model.Page + 2); p2++)
+                            {
+                                <li class="page-item @(p2 == Model.Page ? "active" : "")"><a class="page-link" href="?Page=@p2">@p2</a></li>
+                            }
+                            @if (Model.HasNextPage)
+                            {
+                                <li class="page-item"><a class="page-link" href="?Page=@(Model.Page+1)"><i class="bi bi-chevron-right"></i></a></li>
+                            }
+                        </ul>
+                    </nav>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+<!-- Delete Form (hidden) -->
+<form id="deleteForm" method="post" action="/manage/products/delete/0">
+    @Html.AntiForgeryToken()
+</form>
+
+@section Scripts {
+<script>
+function toggleHidden(productId, btn) {
+    fetch(`/manage/products/toggle-hidden/${productId}`, { method: 'POST', headers: { 'RequestVerificationToken': document.querySelector('[name=__RequestVerificationToken]')?.value ?? '' } })
+        .then(r => r.json()).then(d => {
+            if (d.success) {
+                const icon = btn.querySelector('i');
+                icon.className = icon.className.includes('slash') ? 'bi bi-eye' : 'bi bi-eye-slash';
+                toastAlert(d.message, 'success');
+            }
+        });
+}
+function confirmDelete(productId) {
+    if (!confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) return;
+    const form = document.getElementById('deleteForm');
+    form.action = `/manage/products/delete/${productId}`;
+    form.submit();
+}
+function toastAlert(msg, type) {
+    const el = document.createElement('div');
+    el.className = `alert alert-${type} position-fixed top-0 end-0 m-3`;
+    el.style.zIndex = 9999;
+    el.textContent = msg;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3000);
+}
+</script>
+}

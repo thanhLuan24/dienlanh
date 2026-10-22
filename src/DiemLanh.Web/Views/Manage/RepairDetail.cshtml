@@ -1,0 +1,151 @@
+@model DiemLanh.Application.DTOs.Repair.RepairRequestDto
+@using DiemLanh.Domain.Enums
+@{
+    ViewData["Title"] = $"Sửa chữa #{Model.Id}";
+    ViewData["ActivePage"] = "Repairs";
+    Layout = "_StoreLayout";
+    var techs = ViewBag.Technicians as IEnumerable<DiemLanh.Application.Interfaces.TechnicianDto> ?? Enumerable.Empty<DiemLanh.Application.Interfaces.TechnicianDto>();
+    var (statusBg, statusFg) = Model.Status switch {
+        RepairStatus.PendingReceive => ("#FEF9C3","#854D0E"),
+        RepairStatus.Checking => ("#DBEAFE","#1E40AF"),
+        RepairStatus.Scheduled => ("#EDE9FE","#5B21B6"),
+        RepairStatus.Repairing => ("#FED7AA","#9A3412"),
+        RepairStatus.Completed => ("#D1FAE5","#065F46"),
+        RepairStatus.CannotRepair => ("#FEE2E2","#991B1B"),
+        _ => ("#F3F4F6","#374151")
+    };
+}
+
+@if (TempData["Success"] != null) { <div class="alert alert-success"><i class="bi bi-check-circle-fill me-2"></i>@TempData["Success"]</div> }
+@if (TempData["Error"] != null) { <div class="alert alert-danger"><i class="bi bi-exclamation-circle-fill me-2"></i>@TempData["Error"]</div> }
+
+<div class="mb-4">
+    <a href="/manage/repairs" class="btn btn-sm btn-outline-secondary mb-2"><i class="bi bi-arrow-left me-1"></i>Danh sách sửa chữa</a>
+    <h4 class="mb-1 fw-bold">Yêu cầu sửa chữa #@Model.Id</h4>
+    <span style="background:@statusBg;color:@statusFg;padding:4px 14px;border-radius:100px;font-size:.75rem;font-weight:700;text-transform:uppercase">@Model.StatusDisplay</span>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <!-- Update Status Form -->
+        <div class="card mb-4">
+            <div class="card-header fw-bold"><i class="bi bi-arrow-repeat me-2"></i>Cập nhật xử lý</div>
+            <div class="card-body">
+                <form method="post" action="/manage/repair-detail/@Model.Id/update-status">
+                    @Html.AntiForgeryToken()
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Trạng thái</label>
+                            @{
+                                var allRepair = Enum.GetValues<RepairStatus>();
+                                var repairStatusHtml = "<select name='NewStatus' class='form-select form-select-sm'>";
+                                foreach (var s in allRepair)
+                                {
+                                    var lbl3 = s switch {
+                                        RepairStatus.PendingReceive => "Chờ tiếp nhận",
+                                        RepairStatus.Checking => "Đang kiểm tra",
+                                        RepairStatus.Scheduled => "Đã hẹn lịch",
+                                        RepairStatus.Repairing => "Đang sửa",
+                                        RepairStatus.Completed => "Hoàn thành",
+                                        RepairStatus.CannotRepair => "Không thể sửa",
+                                        _ => s.ToString()
+                                    };
+                                    repairStatusHtml += $"<option value='{(int)s}'{(s == Model.Status ? " selected" : "")}>{lbl3}</option>";
+                                }
+                                repairStatusHtml += "</select>";
+                            }
+                            @Html.Raw(repairStatusHtml)
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">KTV phụ trách</label>
+                            @{
+                                var repairTechHtml = "<select name='TechnicianId' class='form-select form-select-sm'><option value=''>-- Chưa phân công --</option>";
+                                foreach (var t in techs.Where(t => t.IsActive))
+                                    repairTechHtml += $"<option value='{t.Id}'{(Model.TechnicianId == t.Id ? " selected" : "")}>{t.Name}</option>";
+                                repairTechHtml += "</select>";
+                            }
+                            @Html.Raw(repairTechHtml)
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Hẹn lịch (nếu có)</label>
+                            <input type="datetime-local" name="ScheduledAt" class="form-control form-control-sm" value="@Model.ScheduledAt?.ToString("yyyy-MM-ddTHH:mm")" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Chi phí ước tính</label>
+                            <input type="number" name="EstimatedCost" class="form-control form-control-sm" value="@Model.EstimatedCost" placeholder="VNĐ" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Chi phí thực tế</label>
+                            <input type="number" name="ActualCost" class="form-control form-control-sm" value="@Model.ActualCost" placeholder="VNĐ" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Chẩn đoán / Ghi chú kỹ thuật</label>
+                            <textarea name="DiagnosisNote" class="form-control form-control-sm" rows="3" placeholder="Tình trạng máy, lỗi phát hiện...">@Model.DiagnosisNote</textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Ghi chú cửa hàng</label>
+                            <textarea name="StoreNote" class="form-control form-control-sm" rows="2" placeholder="Ghi chú nội bộ...">@Model.StoreNote</textarea>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-check2 me-1"></i>Lưu cập nhật</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <!-- Customer info -->
+        <div class="card mb-4">
+            <div class="card-header fw-bold"><i class="bi bi-person me-2"></i>Khách hàng</div>
+            <div class="card-body">
+                <table class="table table-sm mb-0">
+                    <tr><td class="text-muted small">Họ tên</td><td class="fw-semibold">@Model.CustomerName</td></tr>
+                    <tr><td class="text-muted small">SĐT</td><td>@Model.CustomerPhone</td></tr>
+                    <tr><td class="text-muted small">Địa chỉ</td><td style="font-size:.85rem">@Model.CustomerAddress</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- Device info -->
+        <div class="card mb-4">
+            <div class="card-header fw-bold"><i class="bi bi-cpu me-2"></i>Thiết bị</div>
+            <div class="card-body">
+                <table class="table table-sm mb-0">
+                    <tr><td class="text-muted small">Loại</td><td class="fw-semibold">@Model.DeviceType</td></tr>
+                    <tr><td class="text-muted small">Thương hiệu</td><td>@Model.Brand</td></tr>
+                    @if (!string.IsNullOrEmpty(Model.Model))
+                    {
+                        <tr><td class="text-muted small">Model</td><td>@Model.Model</td></tr>
+                    }
+                    <tr><td class="text-muted small">Triệu chứng</td><td style="font-size:.85rem">@Model.Symptoms</td></tr>
+                    @if (!string.IsNullOrEmpty(Model.Source))
+                    {
+                        <tr><td class="text-muted small">Nguồn</td><td><span class="badge bg-secondary">@Model.Source</span></td></tr>
+                    }
+                </table>
+            </div>
+        </div>
+
+        <!-- Cost summary -->
+        @if (Model.EstimatedCost.HasValue || Model.ActualCost.HasValue)
+        {
+            <div class="card">
+                <div class="card-header fw-bold"><i class="bi bi-cash-coin me-2"></i>Chi phí</div>
+                <div class="card-body">
+                    <table class="table table-sm mb-0">
+                        @if (Model.EstimatedCost.HasValue)
+                        {
+                            <tr><td class="text-muted small">Ước tính</td><td class="fw-semibold">@Model.EstimatedCost.Value.ToString("N0")đ</td></tr>
+                        }
+                        @if (Model.ActualCost.HasValue)
+                        {
+                            <tr><td class="text-muted small">Thực tế</td><td class="fw-bold text-success">@Model.ActualCost.Value.ToString("N0")đ</td></tr>
+                        }
+                    </table>
+                </div>
+            </div>
+        }
+    </div>
+</div>

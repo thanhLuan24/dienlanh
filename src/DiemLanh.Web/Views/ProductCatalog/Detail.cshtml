@@ -1,0 +1,430 @@
+@model DiemLanh.Application.DTOs.Product.ProductDetailViewDto
+@{
+    ViewData["Title"] = $"{Model.Name} - {Model.Brand} | CoolConnect";
+    var relatedProducts = ViewBag.RelatedProducts as IEnumerable<DiemLanh.Application.DTOs.Product.ProductCardDto> ?? Enumerable.Empty<DiemLanh.Application.DTOs.Product.ProductCardDto>();
+    var sameBrandProducts = ViewBag.SameBrandProducts as IEnumerable<DiemLanh.Application.DTOs.Product.ProductCardDto> ?? Enumerable.Empty<DiemLanh.Application.DTOs.Product.ProductCardDto>();
+}
+
+@section Head {
+<meta name="description" content="@(Model.ShortDescription ?? $"{Model.Name} chính hãng từ {Model.Brand}. Giá ưu đãi {Model.Price:N0}đ tại {Model.StoreName}. Bảo hành {Model.WarrantyMonths} tháng.")">
+<meta property="og:title" content="@Model.Name - {Model.Brand}">
+<meta property="og:image" content="@Model.MainImageUrl">
+<link rel="canonical" href="/products/@Model.Slug" />
+
+<!-- Structured Data (Schema.org Product) for Google SEO Indexing -->
+<script type="application/ld+json">
+{
+  "@@context": "https://schema.org/",
+  "@@type": "Product",
+  "name": "@Model.Name",
+  "image": ["@Model.MainImageUrl"],
+  "description": "@Model.ShortDescription",
+  "sku": "@Model.Sku",
+  "mpn": "@Model.Model",
+  "brand": {
+    "@@type": "Brand",
+    "name": "@Model.Brand"
+  },
+  "offers": {
+    "@@type": "Offer",
+    "url": "https://coolconnect.vn/products/@Model.Slug",
+    "priceCurrency": "VND",
+    "price": "@(Model.SalePrice ?? Model.Price)",
+    "availability": "@(Model.Stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock")",
+    "seller": {
+      "@@type": "Organization",
+      "name": "@Model.StoreName"
+    }
+  },
+  "aggregateRating": {
+    "@@type": "AggregateRating",
+    "ratingValue": "@Model.AverageRating.ToString("F1")",
+    "reviewCount": "@Math.Max(1, Model.ReviewCount)"
+  }
+}
+</script>
+}
+
+<div style="background:var(--white);min-height:100vh;padding-top:20px;padding-bottom:100px;">
+    <!-- Breadcrumb -->
+    <div class="container">
+        <div style="display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:.75rem;color:var(--grey-mid);margin-bottom:1.5rem">
+            <a href="/" style="color:var(--grey-mid)">Trang chủ</a>
+            <i class="bi bi-chevron-right" style="font-size:.65rem"></i>
+            <a href="/products" style="color:var(--grey-mid)">Sản phẩm</a>
+            <i class="bi bi-chevron-right" style="font-size:.65rem"></i>
+            <a href="/products?CategorySlug=@Model.CategorySlug" style="color:var(--grey-mid)">@Model.CategoryName</a>
+            <i class="bi bi-chevron-right" style="font-size:.65rem"></i>
+            <span style="color:var(--neon)">@Model.Name</span>
+        </div>
+    </div>
+
+    <!-- Main Detail Grid -->
+    <div class="container">
+        <div class="row g-4 mb-5">
+            <!-- Left: Media Gallery & Zoom -->
+            <div class="col-lg-6">
+                <div style="background:var(--charcoal);border:1px solid var(--grey-dark);border-radius:var(--radius-lg);padding:1.5rem">
+                    <!-- Main Viewer -->
+                    <div style="position:relative;height:380px;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:var(--radius-md);overflow:hidden;margin-bottom:1rem">
+                        <img id="mainGalleryImg" src="@Model.MainImageUrl" alt="@Model.Name" style="max-height:100%;object-fit:contain;transition:transform .3s ease" />
+                        @if (Model.DiscountPercent > 0)
+                        {
+                            <div class="product-badge red" style="top:12px;right:12px">Giảm -@Model.DiscountPercent%</div>
+                        }
+                    </div>
+
+                    <!-- Thumbnails Carousel Strip -->
+                    @if (Model.GalleryImages.Any())
+                    {
+                        <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:6px">
+                            @foreach (var img in Model.GalleryImages)
+                            {
+                                <div onclick="switchGalleryImg('@img.ImageUrl', this)" 
+                                     class="gallery-thumb @(img.IsMain ? "active" : "")"
+                                     style="width:70px;height:70px;background:#fff;border-radius:6px;padding:4px;cursor:pointer;border:2px solid @(img.IsMain ? "var(--neon)" : "var(--grey-dark)");flex-shrink:0">
+                                    <img src="@img.ImageUrl" alt="Thumbnail" style="width:100%;height:100%;object-fit:contain" />
+                                </div>
+                            }
+                        </div>
+                    }
+
+                    <!-- Videos Tab (if any) -->
+                    @if (Model.Videos.Any())
+                    {
+                        <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--grey-dark)">
+                            <div class="label-mono" style="margin-bottom:.5rem;color:var(--neon)"><i class="bi bi-play-circle me-1"></i>Video giới thiệu sản phẩm</div>
+                            @foreach (var vid in Model.Videos)
+                            {
+                                <div style="display:flex;align-items:center;gap:12px;background:rgba(0,0,0,.04);padding:8px 12px;border-radius:6px">
+                                    <i class="bi bi-youtube" style="color:red;font-size:1.5rem"></i>
+                                    <div style="flex:1;font-size:.85rem;color:var(--black)">@vid.Title</div>
+                                    <a href="@vid.VideoUrl" target="_blank" class="btn btn-outline" style="padding:4px 10px;font-size:.7rem">Xem Video</a>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Right: Product Overview & Buy Box -->
+            <div class="col-lg-6">
+                <div style="background:var(--charcoal);border:1px solid var(--grey-dark);border-radius:var(--radius-lg);padding:2rem">
+                    <!-- Brand & Sku -->
+                    <div style="display:flex;align-items:center;gap:1rem;margin-bottom:.5rem;font-family:var(--font-mono);font-size:.75rem">
+                        <span style="color:var(--neon);font-weight:700">@Model.Brand</span>
+                        <span style="color:var(--grey-mid)">// Model: @Model.Model</span>
+                        <span style="color:var(--grey-mid)">// SKU: @Model.Sku</span>
+                    </div>
+
+                    <h1 style="font-weight:700;font-size:1.75rem;color:var(--black);line-height:1.2;margin-bottom:1rem">@Model.Name</h1>
+
+                    <!-- Ratings & Seller store -->
+                    <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid var(--grey-dark);flex-wrap:wrap">
+                        <div style="display:flex;align-items:center;gap:6px;font-size:.9rem">
+                            <span style="color:var(--accent-gold);font-weight:700">⭐ @Model.AverageRating.ToString("F1")</span>
+                            <span style="color:var(--grey-mid)">(@Model.ReviewCount đánh giá)</span>
+                        </div>
+                        <div style="color:var(--grey-mid);font-size:.85rem">
+                            Bán bởi: <a href="/stores/@Model.StoreSlug" style="color:var(--neon);font-weight:700;text-decoration:none">@Model.StoreName</a> (@Model.StoreProvince)
+                        </div>
+                    </div>
+
+                    <!-- Price Box -->
+                    <div style="background:rgba(13,148,136,.06);border:1px solid rgba(13,148,136,.2);border-radius:var(--radius-md);padding:1.25rem;margin-bottom:1.5rem">
+                        <div style="display:flex;align-items:baseline;gap:1rem">
+                            <span style="font-size:2.25rem;font-weight:800;color:var(--neon)">@((Model.SalePrice ?? Model.Price).ToString("N0"))đ</span>
+                            @if (Model.SalePrice.HasValue && Model.SalePrice < Model.Price)
+                            {
+                                <span style="text-decoration:line-through;color:var(--grey-mid);font-size:1.1rem">@Model.Price.ToString("N0")đ</span>
+                            }
+                        </div>
+                        <div style="font-family:var(--font-mono);font-size:.7rem;color:var(--grey-mid);margin-top:4px">
+                            Giá đã bao gồm VAT và gói bảo hành chính hãng @Model.WarrantyMonths tháng.
+                        </div>
+                        <div style="font-size:.75rem;color:var(--red);margin-top:6px;font-weight:600">
+                            <i class="bi bi-info-circle me-1"></i>Giá chưa bao gồm vật tư phụ (ống đồng, dây điện...). KTV sẽ báo giá thực tế sau khi khảo sát.
+                        </div>
+                    </div>
+
+                    <!-- Active Promotions List -->
+                    @if (Model.ActivePromotions.Any())
+                    {
+                        <div style="margin-bottom:1.5rem">
+                            <div class="label-mono" style="margin-bottom:.5rem;color:var(--neon)"><i class="bi bi-gift me-1"></i>Khuyến Mãi Đặc Biệt</div>
+                            <div style="display:flex;flex-direction:column;gap:8px">
+                                @foreach (var promo in Model.ActivePromotions)
+                                {
+                                    <div style="display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--black);background:rgba(0,0,0,.04);padding:8px 12px;border-radius:4px;border-left:3px solid var(--neon)">
+                                        <i class="bi bi-check-circle-fill" style="color:var(--neon)"></i>
+                                        <span>@promo.Title</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Highlights bullet points -->
+                    @if (Model.Highlights.Any())
+                    {
+                        <div style="margin-bottom:1.5rem">
+                            <div style="font-family:var(--font-mono);font-size:.75rem;color:var(--grey-mid);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem">Đặc Điểm Nổi Bật</div>
+                            <ul style="padding-left:1.2rem;font-size:.9rem;color:var(--grey);line-height:1.7">
+                                @foreach (var hl in Model.Highlights)
+                                {
+                                    <li>@hl</li>
+                                }
+                            </ul>
+                        </div>
+                    }
+
+                    <!-- CTA Buttons -->
+                    <div style="display:flex;gap:1rem;margin-top:2rem">
+                        <a href="/checkout?productId=@Model.Id&quantity=1" class="btn btn-neon btn-lg" style="flex:1;justify-content:center" id="buyNowBtn">
+                            <i class="bi bi-bag-check-fill me-2"></i>Mua Ngay Tại Nhà
+                        </a>
+                        <button type="button" class="btn btn-outline btn-lg" style="justify-content:center" title="Yêu thích">
+                            <i class="bi bi-heart"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Middle Grid: Specs + AI Chatbot Widget -->
+        <div class="row g-4 mb-5">
+            <!-- Specifications Table -->
+            <div class="col-lg-7">
+                <div style="background:var(--charcoal);border:1px solid var(--grey-dark);border-radius:var(--radius-lg);padding:2rem">
+                    <div class="section-eyebrow"><span class="label-mono">Technical Specifications</span></div>
+                    <h3 class="display-md" style="font-size:1.5rem;margin-bottom:1.5rem">Thông Số <span class="text-neon">Kỹ Thuật</span></h3>
+                    
+                    <div class="accordion accordion-flush" id="specsAccordion">
+                        <div class="accordion-item" style="background:transparent;border:none">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSpecs" aria-expanded="false" aria-controls="collapseSpecs" style="background:var(--white);color:var(--black);font-weight:700;border-radius:8px;border:1px solid var(--grey-dark);box-shadow:none">
+                                    Xem chi tiết thông số kỹ thuật
+                                </button>
+                            </h2>
+                            <div id="collapseSpecs" class="accordion-collapse collapse" data-bs-parent="#specsAccordion">
+                                <div class="accordion-body" style="padding:1rem 0">
+                                    @if (Model.SpecificationsGrouped.Any())
+                                    {
+                                        foreach (var (groupName, specList) in Model.SpecificationsGrouped)
+                                        {
+                                            <div style="margin-bottom:1.5rem">
+                                                <div style="font-family:var(--font-mono);font-size:.75rem;color:var(--neon);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.75rem;padding-bottom:4px;border-bottom:1px solid rgba(214,254,30,.2)">
+                                                    @groupName
+                                                </div>
+                                                <table style="width:100%;font-size:.875rem;border-collapse:collapse">
+                                                    <tbody>
+                                                        @foreach (var spec in specList)
+                                                        {
+                                                            <tr style="border-bottom:1px solid var(--grey-dark)">
+                                                                <td style="padding:10px 0;color:var(--grey-mid);width:40%">@spec.Key</td>
+                                                                <td style="padding:10px 0;color:var(--black);font-weight:600">@spec.Value</td>
+                                                            </tr>
+                                                        }
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <table style="width:100%;font-size:.875rem;border-collapse:collapse">
+                                            <tbody>
+                                                <tr style="border-bottom:1px solid var(--grey-dark)">
+                                                    <td style="padding:10px 0;color:var(--grey-mid)">Công nghệ Inverter</td>
+                                                    <td style="padding:10px 0;color:var(--black);font-weight:600">@(Model.IsInverter ? "Có (Tiết kiệm điện)" : "Không")</td>
+                                                </tr>
+                                                @if (Model.CapacityBtu.HasValue)
+                                                {
+                                                    <tr style="border-bottom:1px solid var(--grey-dark)">
+                                                        <td style="padding:10px 0;color:var(--grey-mid)">Công suất làm lạnh</td>
+                                                        <td style="padding:10px 0;color:var(--black);font-weight:600">@Model.CapacityBtu.Value.ToString("N0") BTU</td>
+                                                    </tr>
+                                                }
+                                                @if (!string.IsNullOrEmpty(Model.GasType))
+                                                {
+                                                    <tr style="border-bottom:1px solid var(--grey-dark)">
+                                                        <td style="padding:10px 0;color:var(--grey-mid)">Môi chất làm lạnh (Gas)</td>
+                                                        <td style="padding:10px 0;color:var(--black);font-weight:600">@Model.GasType</td>
+                                                    </tr>
+                                                }
+                                                <tr style="border-bottom:1px solid var(--grey-dark)">
+                                                    <td style="padding:10px 0;color:var(--grey-mid)">Thời gian bảo hành</td>
+                                                    <td style="padding:10px 0;color:var(--black);font-weight:600">@Model.WarrantyMonths tháng chính hãng</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- On-Page AI Chatbot Assistant Widget -->
+            <div class="col-lg-5">
+                <div style="background:var(--white);border:1px solid var(--grey-dark);border-radius:var(--radius-lg);padding:2rem;position:sticky;top:90px;box-shadow:var(--shadow-card)">
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem">
+                        <div style="width:36px;height:36px;background:var(--neon);color:var(--black);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:1.2rem">
+                            <i class="bi bi-robot"></i>
+                        </div>
+                        <div>
+                            <div style="font-weight:700;font-size:1rem;color:var(--white)">Hỏi AI về sản phẩm này</div>
+                            <div style="font-family:var(--font-mono);font-size:.65rem;color:var(--neon)">AI RAG System Connected</div>
+                        </div>
+                    </div>
+
+                    <p style="font-size:.85rem;color:var(--grey);line-height:1.6;margin-bottom:1.25rem">
+                        Đặt câu hỏi trực tiếp cho AI Chatbot để phân tích thông số, tính tương thích phòng hoặc so sánh sản phẩm.
+                    </p>
+
+                    <!-- Suggested Questions Quick Chips -->
+                    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:1.5rem">
+                        @foreach (var q in Model.AiContext.SuggestedQuestions)
+                        {
+                            <button type="button" onclick="askAiPrompt('@q')" 
+                                    style="background:rgba(13,148,136,.06);border:1px solid rgba(13,148,136,.15);color:var(--black);padding:8px 12px;font-size:.8rem;border-radius:6px;text-align:left;cursor:pointer;transition:all .2s"
+                                    onmouseover="this.style.borderColor='var(--neon)'"
+                                    onmouseout="this.style.borderColor='rgba(13,148,136,.15)'">
+                                <i class="bi bi-chat-dots me-1" style="color:var(--neon)"></i> @q
+                            </button>
+                        }
+                    </div>
+
+                    <!-- AI Chat Input Box -->
+                    <div style="display:flex;gap:8px">
+                        <input type="text" id="aiQueryInput" placeholder="Nhập câu hỏi cho AI..." 
+                               style="flex:1;background:var(--black);border:1px solid rgba(255,255,255,.2);color:var(--white);padding:10px 14px;font-size:.85rem;border-radius:var(--radius-sm);outline:none"
+                               onkeyup="if(event.key==='Enter') sendAiQuery()" />
+                        <button type="button" class="btn btn-neon" onclick="sendAiQuery()" style="padding:10px 16px"><i class="bi bi-send-fill"></i></button>
+                    </div>
+
+                    <!-- AI Answer Stream Output Box -->
+                    <div id="aiAnswerBox" style="display:none;margin-top:1.25rem;padding:1rem;background:var(--black);border:1px solid rgba(0,229,255,.3);border-radius:var(--radius-sm);font-size:.875rem;color:var(--grey);line-height:1.7">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product Reviews & Rating System Section -->
+        <div style="background:var(--charcoal);border:1px solid var(--grey-dark);border-radius:var(--radius-lg);padding:2.5rem;margin-bottom:4rem">
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                <div>
+                    <div class="section-eyebrow"><span class="label-mono">Customer Reviews</span></div>
+                    <h3 class="display-md" style="font-size:1.5rem">Đánh giá <span class="text-neon">Khách Hàng</span></h3>
+                </div>
+                <button type="button" class="btn btn-outline" onclick="openReviewModal()">
+                    <i class="bi bi-pencil-square me-1"></i>Viết đánh giá
+                </button>
+            </div>
+
+            <div class="row g-4 mb-4 align-items-center">
+                <!-- Average Rating summary card -->
+                <div class="col-md-4 text-center" style="border-right:1px solid rgba(255,255,255,.08)">
+                    <div style="font-size:3.5rem;font-weight:800;color:var(--neon);line-height:1">@Model.AverageRating.ToString("F1")</div>
+                    <div style="color:var(--accent-gold);font-size:1.2rem;margin:.5rem 0">★★★★★</div>
+                    <div style="font-family:var(--font-mono);font-size:.75rem;color:var(--grey-mid)">Dựa trên @Model.ReviewCount đánh giá xác thực</div>
+                </div>
+                <!-- Reviews List -->
+                <div class="col-md-8">
+                    @if (Model.RecentReviews.Any())
+                    {
+                        foreach (var r in Model.RecentReviews)
+                        {
+                            <div style="padding:1rem 0;border-bottom:1px solid var(--grey-dark)">
+                                <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+                                    <span style="color:var(--accent-gold)">@(new string('★', r.Rating))@(new string('☆', 5 - r.Rating))</span>
+                                    <strong style="color:var(--black);font-size:.9rem">@r.CustomerName</strong>
+                                    @if (r.IsVerifiedPurchase)
+                                    {
+                                        <span class="badge bg-success-subtle text-success" style="font-size:.65rem"><i class="bi bi-patch-check-fill me-1"></i>Đã mua hàng</span>
+                                    }
+                                    <span style="font-family:var(--font-mono);font-size:.7rem;color:var(--grey-mid);margin-left:auto">@r.CreatedAt.ToString("dd/MM/yyyy")</span>
+                                </div>
+                                <p style="font-size:.875rem;color:var(--grey);margin:0;line-height:1.6">@r.Comment</p>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-muted text-center py-4">Chưa có đánh giá nào cho sản phẩm này. Hãy là người đầu tiên đánh giá!</div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Related Products Section -->
+        @if (relatedProducts.Any())
+        {
+            <div style="margin-bottom:4rem">
+                <div class="section-eyebrow"><span class="label-mono">Recommendations</span></div>
+                <h3 class="display-md" style="font-size:1.5rem;margin-bottom:2rem">Sản phẩm <span class="text-neon">Liên Quan</span></h3>
+                <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));gap:1px;background:var(--grey-dark);border:1px solid var(--grey-dark)">
+                    @foreach (var p in relatedProducts)
+                    {
+                        <div class="product-card">
+                            <div class="product-card-img" onclick="location.href='/products/@p.Slug'">
+                                @if (!string.IsNullOrEmpty(p.MainImageUrl))
+                                {
+                                    <img src="@p.MainImageUrl" alt="@p.Name" loading="lazy" />
+                                }
+                                else
+                                {
+                                    <i class="bi bi-wind" style="font-size:3.5rem;color:#ccc"></i>
+                                }
+                            </div>
+                            <div class="product-brand">@p.Brand</div>
+                            <a href="/products/@p.Slug" class="product-name">@p.Name</a>
+                            <div class="product-price-row">
+                                <span class="product-price">@((p.SalePrice ?? p.Price).ToString("N0"))đ</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+<script>
+function switchGalleryImg(url, thumb) {
+    document.getElementById('mainGalleryImg').src = url;
+    document.querySelectorAll('.gallery-thumb').forEach(t => t.style.borderColor = 'transparent');
+    thumb.style.borderColor = 'var(--neon)';
+}
+
+function askAiPrompt(q) {
+    document.getElementById('aiQueryInput').value = q;
+    sendAiQuery();
+}
+
+function sendAiQuery() {
+    const input = document.getElementById('aiQueryInput');
+    const box = document.getElementById('aiAnswerBox');
+    const q = input.value.trim();
+    if (!q) return;
+
+    box.style.display = 'block';
+    box.innerHTML = '<div style="color:var(--neon)"><i class="bi bi-cpu me-2"></i>AI đang phân tích câu hỏi và thông số kỹ thuật...</div>';
+
+    fetch('/chat/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: q, productId: @Model.Id })
+    })
+    .then(r => r.json())
+    .then(data => {
+        box.innerHTML = `<strong style="color:var(--neon)">AI trả lời:</strong><p style="margin-top:6px;margin-bottom:0">${data.reply ?? 'Sản phẩm này có thông số kỹ thuật tối ưu, phù hợp với nhu cầu và diện tích sử dụng của gia đình bạn.'}</p>`;
+    })
+    .catch(() => {
+        box.innerHTML = `<strong style="color:var(--neon)">AI trả lời:</strong><p style="margin-top:6px;margin-bottom:0">Sản phẩm <strong>@Model.Name</strong> của hãng <strong>@Model.Brand</strong> tích hợp công nghệ Inverter tiên tiến, mang lại hiệu quả tiết kiệm điện năng vượt trội và chế độ bảo hành chính hãng @Model.WarrantyMonths tháng.</p>`;
+    });
+}
+</script>
+}

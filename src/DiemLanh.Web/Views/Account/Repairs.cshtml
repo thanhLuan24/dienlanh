@@ -1,0 +1,162 @@
+@model List<DiemLanh.Application.DTOs.Repair.RepairRequestDto>
+@using DiemLanh.Domain.Enums
+@{
+    ViewData["Title"] = "Yêu Cầu Sửa Chữa Của Tôi";
+}
+
+<style>
+    .repairs-wrap { max-width: 960px; margin: 2.5rem auto; padding: 0 1rem; }
+    .repairs-header { margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+    .repair-card { background: var(--white); border: 1px solid var(--grey-dark); border-radius: var(--radius-lg); margin-bottom: 1.25rem; overflow: hidden; transition: box-shadow .2s; }
+    .repair-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,.06); }
+    .repair-card-header { padding: 1rem 1.5rem; background: var(--charcoal); border-bottom: 1px solid var(--grey-dark); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .5rem; }
+    .repair-card-body { padding: 1.25rem 1.5rem; }
+    .status-badge-step { display: inline-flex; align-items: center; gap: .4rem; padding: 4px 12px; border-radius: 100px; font-family: var(--font-mono); font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+    .s-step1 { background: #FEF3C7; color: #92400E; border: 1px solid #FCD34D; } /* 1. Tiếp nhận & Báo giá */
+    .s-step2 { background: #DBEAFE; color: #1E40AF; border: 1px solid #93C5FD; } /* 2. Đang xử lý sửa chữa */
+    .s-step3 { background: #D1FAE5; color: #065F46; border: 1px solid #6EE7B7; } /* 3. Hoàn thành & Bảo hành */
+    .s-closed { background: #FEE2E2; color: #991B1B; border: 1px solid #FCA5A5; } /* Đã đóng phiếu */
+
+    /* 3-Step Progress Bar Component */
+    .progress-tracker { display: flex; align-items: center; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--grey-dark); position: relative; }
+    .tracker-step { flex: 1; text-align: center; position: relative; z-index: 1; }
+    .tracker-circle { width: 32px; height: 32px; border-radius: 50%; background: var(--charcoal); border: 2px solid var(--grey-dark); color: var(--grey-mid); display: flex; align-items: center; justify-content: center; font-size: .8rem; font-weight: 700; margin: 0 auto .4rem; transition: all .2s; }
+    .tracker-label { font-size: .75rem; font-weight: 600; color: var(--grey-mid); }
+    .tracker-step.active .tracker-circle { background: var(--neon); border-color: var(--neon); color: #fff; }
+    .tracker-step.active .tracker-label { color: var(--black); font-weight: 700; }
+    .tracker-step.completed .tracker-circle { background: #10B981; border-color: #10B981; color: #fff; }
+    .tracker-line { position: absolute; top: 26px; left: 16%; right: 16%; height: 2px; background: var(--grey-dark); z-index: 0; }
+</style>
+
+<div class="repairs-wrap">
+    <div class="repairs-header">
+        <div>
+            <p class="label-mono" style="margin-bottom:.3rem"><i class="bi bi-person-circle me-1"></i>Tài khoản của tôi</p>
+            <h1 style="font-size:1.75rem;font-weight:800;text-transform:uppercase;letter-spacing:-.03em;margin:0">
+                Lịch <span class="text-neon">Dịch Vụ</span>
+            </h1>
+        </div>
+        <a href="/repairs/book" class="btn btn-neon">
+            <i class="bi bi-plus-circle me-1"></i>Đặt Lịch Sửa Chữa Mới
+        </a>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="orders-nav-tabs" style="display: flex; border-bottom: 2px solid var(--grey-dark); margin-bottom: 1.5rem; gap: 1rem;">
+        <a href="/auth/orders?tab=active" class="orders-nav-tab" style="padding: .75rem 1.25rem; font-weight: 700; color: var(--grey-mid); text-decoration: none; border-bottom: 3px solid transparent; margin-bottom: -2px; display: flex; align-items: center; gap: .5rem; transition: all .2s;">
+            <i class="bi bi-cart"></i> Mua sắm (Đang xử lý)
+        </a>
+        <a href="/auth/orders?tab=completed" class="orders-nav-tab" style="padding: .75rem 1.25rem; font-weight: 700; color: var(--grey-mid); text-decoration: none; border-bottom: 3px solid transparent; margin-bottom: -2px; display: flex; align-items: center; gap: .5rem; transition: all .2s;">
+            <i class="bi bi-check2-all"></i> Mua sắm (Hoàn thành)
+        </a>
+        <a href="/auth/repairs" class="orders-nav-tab active" style="padding: .75rem 1.25rem; font-weight: 700; color: var(--neon); text-decoration: none; border-bottom: 3px solid var(--neon); margin-bottom: -2px; display: flex; align-items: center; gap: .5rem; transition: all .2s;">
+            <i class="bi bi-tools"></i> Lịch Dịch Vụ (Sửa chữa)
+            <span class="tab-badge" style="background: rgba(13, 148, 136, 0.1); color: var(--neon); border: 1px solid var(--neon); padding: 2px 8px; border-radius: 20px; font-size: .75rem; font-family: var(--font-mono);">@Model.Count(r => r.Status != RepairStatus.Completed && r.Status != RepairStatus.CannotRepair)</span>
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success mb-4"><i class="bi bi-check-circle-fill me-2"></i>@TempData["Success"]</div>
+    }
+
+    @if (!Model.Any())
+    {
+        <div style="background:var(--white);border:1px solid var(--grey-dark);border-radius:var(--radius-lg);padding:4rem 2rem;text-align:center">
+            <div style="width:72px;height:72px;background:var(--charcoal);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem;font-size:2rem;color:var(--grey-mid)">
+                <i class="bi bi-wrench-adjustable"></i>
+            </div>
+            <h4 style="font-weight:700;margin-bottom:.5rem">Chưa có yêu cầu sửa chữa nào</h4>
+            <p style="color:var(--grey);max-width:400px;margin:0 auto 1.5rem;font-size:.9rem">Bạn chưa gửi yêu cầu sửa chữa thiết bị điện lạnh nào.</p>
+            <a href="/repairs/book" class="btn btn-neon">Đặt lịch sửa chữa ngay</a>
+        </div>
+    }
+    else
+    {
+        foreach (var r in Model)
+        {
+            var step = r.Status switch {
+                RepairStatus.PendingReceive or RepairStatus.Checking => 1,
+                RepairStatus.Scheduled or RepairStatus.Repairing => 2,
+                RepairStatus.Completed => 3,
+                _ => 0 // Closed/CannotRepair
+            };
+
+            var (statusClass, statusText) = r.Status switch {
+                RepairStatus.PendingReceive or RepairStatus.Checking => ("s-step1", "1. Tiếp nhận & Báo giá"),
+                RepairStatus.Scheduled or RepairStatus.Repairing => ("s-step2", "2. Đang xử lý sửa chữa"),
+                RepairStatus.Completed => ("s-step3", "3. Hoàn thành & Bảo hành"),
+                RepairStatus.CannotRepair => ("s-closed", "Không thể sửa"),
+                _ => ("s-closed", "Đã hủy")
+            };
+
+            <div class="repair-card">
+                <div class="repair-card-header">
+                    <div>
+                        <span style="font-family:var(--font-mono);font-size:.75rem;color:var(--grey-mid)">Mã phiếu: </span>
+                        <strong style="color:var(--black);font-family:var(--font-mono)">#SR-@r.Id</strong>
+                        <span style="margin:0 8px;color:var(--grey-dark)">|</span>
+                        <span style="font-size:.8rem;color:var(--grey)">Cửa hàng: <strong>@r.StoreName</strong></span>
+                    </div>
+                    <span class="status-badge-step @statusClass">@statusText</span>
+                </div>
+                <div class="repair-card-body">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <div style="font-weight:700;font-size:1.1rem;margin-bottom:.25rem">@r.DeviceType - @r.Brand @r.Model</div>
+                            <div style="font-size:.85rem;color:var(--grey);margin-bottom:.5rem">
+                                <i class="bi bi-exclamation-triangle me-1" style="color:#F59E0B"></i>Triệu chứng: @r.Symptoms
+                            </div>
+                            <div style="font-size:.8rem;color:var(--grey-mid)">
+                                <i class="bi bi-clock me-1"></i>Ngày gửi: @r.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-md-end d-flex flex-column justify-content-between">
+                            <div>
+                                @if (r.EstimatedCost.HasValue)
+                                {
+                                    <div style="font-size:.75rem;color:var(--grey-mid)">Chi phí ước tính:</div>
+                                    <div style="font-weight:800;color:var(--neon);font-size:1.1rem">@r.EstimatedCost.Value.ToString("N0")đ</div>
+                                }
+                            </div>
+                            <div class="mt-2" style="display:flex;gap:.5rem;justify-content:flex-end">
+                                @if (r.Status == RepairStatus.PendingReceive)
+                                {
+                                    <form action="/auth/repairs/@r.Id/cancel" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn hủy yêu cầu sửa chữa này?');">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                                            <i class="bi bi-x-circle me-1"></i> Hủy
+                                        </button>
+                                    </form>
+                                }
+                                <a href="/auth/repairs/@r.Id" class="btn btn-outline btn-sm">
+                                    Chi tiết <i class="bi bi-chevron-right ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Option 1: 3-Step Progress Bar -->
+                    @if (step > 0)
+                    {
+                        <div class="progress-tracker">
+                            <div class="tracker-line"></div>
+                            <div class="tracker-step @(step >= 1 ? (step > 1 ? "completed" : "active") : "")">
+                                <div class="tracker-circle">@(step > 1 ? "✓" : "1")</div>
+                                <div class="tracker-label">1. Tiếp nhận & Báo giá</div>
+                            </div>
+                            <div class="tracker-step @(step >= 2 ? (step > 2 ? "completed" : "active") : "")">
+                                <div class="tracker-circle">@(step > 2 ? "✓" : "2")</div>
+                                <div class="tracker-label">2. Đang sửa chữa</div>
+                            </div>
+                            <div class="tracker-step @(step >= 3 ? "active completed" : "")">
+                                <div class="tracker-circle">@(step == 3 ? "✓" : "3")</div>
+                                <div class="tracker-label">3. Hoàn thành & Bảo hành</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    }
+</div>

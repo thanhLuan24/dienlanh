@@ -1,0 +1,234 @@
+@model DiemLanh.Application.DTOs.Order.OrderPlaceDto
+@{
+    ViewData["Title"] = "Thanh Toán";
+    var product = ViewBag.Product as DiemLanh.Application.DTOs.Product.ProductDetailViewDto;
+    var qty = (int)(ViewBag.Quantity ?? 1);
+    var effectivePrice = product?.SalePrice ?? product?.Price ?? 0;
+    var total = effectivePrice * qty;
+}
+
+<style>
+.checkout-wrap { max-width: 1100px; margin: 2.5rem auto; padding: 0 1rem; }
+.checkout-grid { display: grid; grid-template-columns: 1fr 400px; gap: 2rem; align-items: start; }
+.checkout-card { background: var(--white); border: 1px solid var(--grey-dark); border-radius: var(--radius-lg); padding: 2rem; }
+.checkout-section-title { font-family: var(--font-mono); font-size: .65rem; text-transform: uppercase; letter-spacing: .12em; color: var(--neon); margin-bottom: 1.25rem; padding-bottom: .75rem; border-bottom: 1px solid var(--grey-dark); }
+.checkout-field { margin-bottom: 1.25rem; }
+.checkout-label { display: block; font-family: var(--font-mono); font-size: .65rem; text-transform: uppercase; letter-spacing: .1em; color: var(--grey); margin-bottom: .4rem; }
+.checkout-input { width: 100%; background: var(--charcoal); border: 1.5px solid var(--grey-dark); color: var(--black); padding: 11px 14px; border-radius: 8px; font-family: var(--font-main); font-size: .9rem; outline: none; box-sizing: border-box; transition: border-color .2s, box-shadow .2s; }
+.checkout-input:focus { border-color: var(--neon); box-shadow: 0 0 0 3px rgba(13,148,136,.1); }
+.checkout-input.input-err { border-color: var(--red); }
+.checkout-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.product-summary-card { background: var(--charcoal); border: 1px solid var(--grey-dark); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.5rem; display: flex; gap: 1rem; align-items: center; }
+.product-summary-img { width: 80px; height: 80px; object-fit: contain; border-radius: 8px; background: var(--white); flex-shrink: 0; border: 1px solid var(--grey-dark); }
+.product-summary-img-placeholder { width: 80px; height: 80px; border-radius: 8px; background: var(--white); display: flex; align-items: center; justify-content: center; color: var(--grey-mid); font-size: 1.8rem; flex-shrink: 0; border: 1px solid var(--grey-dark); }
+.price-row { display: flex; justify-content: space-between; align-items: center; padding: .6rem 0; border-bottom: 1px solid var(--grey-dark); font-size: .875rem; color: var(--grey); }
+.price-row:last-child { border-bottom: none; }
+.price-total-row { display: flex; justify-content: space-between; align-items: center; padding: .75rem 0; font-weight: 800; font-size: 1.15rem; color: var(--black); }
+.submit-btn { width: 100%; padding: 14px; background: var(--neon); color: #fff; border: none; border-radius: 8px; font-family: var(--font-main); font-weight: 700; font-size: 1rem; cursor: pointer; transition: all .25s cubic-bezier(0.4,0,0.2,1); display: flex; align-items: center; justify-content: center; gap: .5rem; }
+.submit-btn:hover { background: #0b8177; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(13,148,136,.3); }
+.submit-btn:active { transform: translateY(0); }
+.breadcrumb-row { display: flex; align-items: center; gap: .5rem; font-size: .8rem; color: var(--grey-mid); margin-bottom: 2rem; }
+.breadcrumb-row a { color: var(--grey-mid); text-decoration: none; } .breadcrumb-row a:hover { color: var(--neon); }
+.qty-badge { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; background: var(--neon); color: #fff; border-radius: 50%; font-size: .7rem; font-weight: 700; flex-shrink: 0; }
+@@media(max-width: 768px) { .checkout-grid { grid-template-columns: 1fr; } .checkout-2col { grid-template-columns: 1fr; } }
+</style>
+
+<div class="checkout-wrap">
+    <!-- Breadcrumb -->
+    <div class="breadcrumb-row">
+        <a href="/"><i class="bi bi-house"></i></a>
+        <span>/</span>
+        @if (product != null)
+        {
+            <a href="/products/@product.Slug">@product.Name</a>
+            <span>/</span>
+        }
+        <span style="color:var(--black);font-weight:600">Thanh toán</span>
+    </div>
+
+    <div style="margin-bottom:2rem">
+        <p class="label-mono" style="margin-bottom:.4rem">Checkout</p>
+        <h1 style="font-size:2rem;font-weight:800;letter-spacing:-.03em;text-transform:uppercase;margin:0">Thông Tin <span class="text-neon">Đặt Hàng</span></h1>
+    </div>
+
+    <form asp-action="PlaceOrder" asp-controller="Checkout" method="post" id="checkoutForm">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="ProductId" />
+        <input type="hidden" asp-for="Quantity" />
+
+        <div class="checkout-grid">
+            <!-- Left: Form -->
+            <div>
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div style="background:#FEE2E2;border:1px solid #FCA5A5;border-radius:8px;padding:1rem 1.25rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:.75rem">
+                        <i class="bi bi-exclamation-triangle-fill" style="color:#991B1B;font-size:1.1rem"></i>
+                        <div>
+                            @foreach (var err in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                            {
+                                <div style="font-size:.875rem;color:#991B1B">@err.ErrorMessage</div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <div class="checkout-card" style="margin-bottom:1.5rem">
+                    <div class="checkout-section-title"><i class="bi bi-person-fill me-2"></i>Thông tin người nhận</div>
+                    <div class="checkout-field">
+                        <label class="checkout-label" for="CustomerName">Họ và tên <span style="color:var(--red)">*</span></label>
+                        <input id="CustomerName" asp-for="CustomerName" class="checkout-input" placeholder="Nguyễn Văn A" required />
+                        <span asp-validation-for="CustomerName" style="font-size:.75rem;color:var(--red)"></span>
+                    </div>
+                    <div class="checkout-2col">
+                        <div class="checkout-field">
+                            <label class="checkout-label" for="CustomerPhone">Số điện thoại <span style="color:var(--red)">*</span></label>
+                            <input id="CustomerPhone" asp-for="CustomerPhone" class="checkout-input" placeholder="0901234567" required />
+                            <span asp-validation-for="CustomerPhone" style="font-size:.75rem;color:var(--red)"></span>
+                        </div>
+                        <div class="checkout-field">
+                            <label class="checkout-label" for="CustomerEmail">Email <span style="color:var(--red)">*</span></label>
+                            <input id="CustomerEmail" asp-for="CustomerEmail" type="email" class="checkout-input" placeholder="email@example.com" required />
+                            <span asp-validation-for="CustomerEmail" style="font-size:.75rem;color:var(--red)"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="checkout-card" style="margin-bottom:1.5rem">
+                    <div class="checkout-section-title"><i class="bi bi-geo-alt-fill me-2"></i>Địa chỉ lắp đặt & giao hàng</div>
+                    <div class="checkout-field">
+                        <label class="checkout-label" for="ShippingAddress">Địa chỉ cụ thể <span style="color:var(--red)">*</span></label>
+                        <input id="ShippingAddress" asp-for="ShippingAddress" class="checkout-input" placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành phố" required />
+                        <span asp-validation-for="ShippingAddress" style="font-size:.75rem;color:var(--red)"></span>
+                    </div>
+                    <div class="checkout-field" style="margin-bottom:0">
+                        <label class="checkout-label" for="Note">Ghi chú thêm</label>
+                        <textarea id="Note" asp-for="Note" class="checkout-input" rows="3" placeholder="Thời gian giao hàng, yêu cầu đặc biệt..."></textarea>
+                    </div>
+                </div>
+
+                <div class="checkout-card">
+                    <div class="checkout-section-title"><i class="bi bi-credit-card-fill me-2"></i>Phương thức thanh toán</div>
+                    <div style="display:flex;flex-direction:column;gap:.75rem">
+                        <label style="display:flex;align-items:center;gap:.75rem;padding:1rem;background:rgba(13,148,136,.06);border:2px solid var(--neon);border-radius:8px;cursor:pointer">
+                            <input type="radio" name="paymentMethod" value="cod" checked style="accent-color:var(--neon);width:16px;height:16px" />
+                            <div>
+                                <div style="font-weight:700;font-size:.9rem">💵 Thanh toán khi nhận hàng (COD)</div>
+                                <div style="font-size:.75rem;color:var(--grey-mid)">Trả tiền mặt khi nhận hàng & lắp đặt</div>
+                            </div>
+                        </label>
+                        <label style="display:flex;align-items:center;gap:.75rem;padding:1rem;background:var(--charcoal);border:1.5px solid var(--grey-dark);border-radius:8px;cursor:pointer">
+                            <input type="radio" name="paymentMethod" value="bank" style="accent-color:var(--neon);width:16px;height:16px" />
+                            <div>
+                                <div style="font-weight:700;font-size:.9rem">🏦 Chuyển khoản ngân hàng</div>
+                                <div style="font-size:.75rem;color:var(--grey-mid)">Thông tin chuyển khoản sẽ hiển thị sau khi đặt hàng</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Order Summary -->
+            <div>
+                <div class="checkout-card" style="position:sticky;top:100px">
+                    <div class="checkout-section-title"><i class="bi bi-bag-fill me-2"></i>Tóm tắt đơn hàng</div>
+
+                    @if (product != null)
+                    {
+                        <div class="product-summary-card">
+                            @if (!string.IsNullOrEmpty(product.MainImageUrl))
+                            {
+                                <img src="@product.MainImageUrl" alt="@product.Name" class="product-summary-img" />
+                            }
+                            else
+                            {
+                                <div class="product-summary-img-placeholder"><i class="bi bi-wind"></i></div>
+                            }
+                            <div>
+                                <div style="font-weight:700;font-size:.9rem;line-height:1.3;margin-bottom:.3rem">@product.Name</div>
+                                <div style="font-size:.75rem;color:var(--grey-mid);margin-bottom:.4rem">@product.Brand · @product.Model</div>
+                                <div style="display:flex;align-items:center;gap:.5rem">
+                                    <span class="qty-badge">@qty</span>
+                                    <span style="font-size:.75rem;color:var(--grey-mid)">sản phẩm</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Store info -->
+                        <div style="padding:.75rem;background:rgba(13,148,136,.05);border:1px solid rgba(13,148,136,.15);border-radius:8px;margin-bottom:1.5rem;font-size:.8rem">
+                            <i class="bi bi-shop me-1" style="color:var(--neon)"></i>
+                            Cung cấp bởi: <strong>@product.StoreName</strong>
+                        </div>
+
+                        <!-- Price breakdown -->
+                        <div style="margin-bottom:1.5rem">
+                            <div class="price-row">
+                                <span>Đơn giá</span>
+                                <span>@effectivePrice.ToString("N0")đ</span>
+                            </div>
+                            @if (product.SalePrice.HasValue && product.SalePrice < product.Price)
+                            {
+                                <div class="price-row">
+                                    <span>Tiết kiệm</span>
+                                    <span style="color:#10b981">-@((product.Price - product.SalePrice.Value).ToString("N0"))đ</span>
+                                </div>
+                            }
+                            <div class="price-row">
+                                <span>Số lượng</span>
+                                <span>×@qty</span>
+                            </div>
+                            <div class="price-row">
+                                <span>Phí giao hàng & lắp đặt</span>
+                                <span style="color:#10b981;font-weight:600">Miễn phí</span>
+                            </div>
+                        </div>
+                        <div style="border-top:2px solid var(--grey-dark);padding-top:.75rem;margin-bottom:1.5rem">
+                            <div class="price-total-row">
+                                <span>Tổng cộng</span>
+                                <span style="color:var(--neon);font-size:1.35rem">@total.ToString("N0")đ</span>
+                            </div>
+                        </div>
+                    }
+
+                    <button type="submit" class="submit-btn" id="submitBtn">
+                        <i class="bi bi-bag-check-fill"></i> Xác nhận đặt hàng
+                    </button>
+
+                    <div style="margin-top:1rem;display:flex;flex-direction:column;gap:.4rem">
+                        <div style="display:flex;align-items:center;gap:.5rem;font-size:.75rem;color:var(--grey-mid)">
+                            <i class="bi bi-shield-check" style="color:var(--neon)"></i> Đơn hàng được bảo vệ bởi CoolConnect
+                        </div>
+                        <div style="display:flex;align-items:center;gap:.5rem;font-size:.75rem;color:var(--grey-mid)">
+                            <i class="bi bi-telephone" style="color:var(--neon)"></i> Hỗ trợ 24/7: 1800-COOL
+                        </div>
+                        <div style="display:flex;align-items:center;gap:.5rem;font-size:.75rem;color:var(--grey-mid)">
+                            <i class="bi bi-arrow-return-left" style="color:var(--neon)"></i> Đổi trả trong 7 ngày
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+<script>
+document.getElementById('checkoutForm').addEventListener('submit', function() {
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Đang xử lý...';
+});
+// Payment method radio toggle styling
+document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        document.querySelectorAll('label:has(input[name="paymentMethod"])').forEach(lbl => {
+            lbl.style.borderColor = 'var(--grey-dark)';
+            lbl.style.background = 'var(--charcoal)';
+        });
+        if (this.checked) {
+            this.closest('label').style.borderColor = 'var(--neon)';
+            this.closest('label').style.background = 'rgba(13,148,136,.06)';
+        }
+    });
+});
+</script>
+}

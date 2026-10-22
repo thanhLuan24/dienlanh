@@ -1,0 +1,164 @@
+@model DiemLanh.Application.DTOs.Product.ProductCreateDto
+@{
+    ViewData["Title"] = "Thêm Sản phẩm";
+    ViewData["ActivePage"] = "Products";
+    Layout = "_StoreLayout";
+    var categories = ViewBag.Categories as IEnumerable<DiemLanh.Application.DTOs.Product.ProductCategoryDto> ?? Enumerable.Empty<DiemLanh.Application.DTOs.Product.ProductCategoryDto>();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a href="/manage/products/index">Sản phẩm</a></li>
+                <li class="breadcrumb-item active">Thêm mới</li>
+            </ol>
+        </nav>
+        <h4 class="mb-0 fw-bold">Thêm Sản phẩm mới</h4>
+    </div>
+</div>
+
+<form method="post" action="/manage/products/create" enctype="multipart/form-data">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="StoreId" value="@Model.StoreId" />
+
+    <div class="row g-4">
+        <!-- Main Info -->
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header fw-semibold"><i class="bi bi-info-circle me-2"></i>Thông tin cơ bản</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Tên sản phẩm <span class="text-danger">*</span></label>
+                        <input type="text" name="Name" value="@Model.Name" class="form-control" required placeholder="VD: Điều hòa Daikin FTKB35WAVMV" />
+                        @if (ViewData.ModelState["Name"]?.Errors.Any() == true)
+                        {
+                            <div class="text-danger small mt-1">@ViewData.ModelState["Name"]!.Errors[0].ErrorMessage</div>
+                        }
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Thương hiệu</label>
+                            <input type="text" name="Brand" value="@Model.Brand" class="form-control" list="brandList" placeholder="Daikin, LG, Samsung..." />
+                            <datalist id="brandList">
+                                <option value="Daikin" /><option value="LG" /><option value="Samsung" />
+                                <option value="Panasonic" /><option value="Mitsubishi" /><option value="Toshiba" />
+                                <option value="Sharp" /><option value="Electrolux" /><option value="Bosch" />
+                            </datalist>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Model</label>
+                            <input type="text" name="Model" value="@Model.Model" class="form-control" placeholder="FTKB35WAVMV" />
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <label class="form-label fw-semibold">Danh mục <span class="text-danger">*</span></label>
+                        @{
+                            var catHtml = "<select name='CategoryId' class='form-select' required>";
+                            catHtml += "<option value=''>-- Chọn danh mục --</option>";
+                            foreach (var c in categories)
+                                catHtml += $"<option value='{c.Id}'{(Model.CategoryId == c.Id ? " selected" : "")}>{c.Name}</option>";
+                            catHtml += "</select>";
+                        }
+                        @Html.Raw(catHtml)
+                    </div>
+                    <div class="mt-3">
+                        <label class="form-label fw-semibold">Mô tả</label>
+                        <textarea name="Description" rows="5" class="form-control" placeholder="Mô tả chi tiết sản phẩm...">@Model.Description</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Specifications -->
+            <div class="card mb-4">
+                <div class="card-header fw-semibold">
+                    <i class="bi bi-list-ul me-2"></i>Thông số kỹ thuật
+                    <button type="button" class="btn btn-sm btn-outline-primary float-end" onclick="addSpec()">
+                        <i class="bi bi-plus"></i> Thêm
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="specRows">
+                        <div class="row g-2 mb-2 spec-row">
+                            <div class="col-5"><input type="text" name="SpecKeys" class="form-control form-control-sm" placeholder="VD: Công suất" /></div>
+                            <div class="col-6"><input type="text" name="SpecValues" class="form-control form-control-sm" placeholder="VD: 9000 BTU" /></div>
+                            <div class="col-1"><button type="button" class="btn btn-sm btn-outline-danger" onclick="removeSpec(this)"><i class="bi bi-x"></i></button></div>
+                        </div>
+                    </div>
+                    <small class="text-muted">Thêm các thông số kỹ thuật để hiển thị trên trang sản phẩm</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar: Pricing & Options -->
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header fw-semibold"><i class="bi bi-currency-dollar me-2"></i>Giá bán</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Giá gốc <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input type="number" name="Price" value="@Model.Price" class="form-control" min="0" required />
+                            <span class="input-group-text">VNĐ</span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Giá khuyến mãi</label>
+                        <div class="input-group">
+                            <input type="number" name="SalePrice" value="@Model.SalePrice" class="form-control" min="0" />
+                            <span class="input-group-text">VNĐ</span>
+                        </div>
+                        <small class="text-muted">Để trống nếu không có khuyến mãi</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Tồn kho</label>
+                        <input type="number" name="Stock" value="@Model.Stock" class="form-control" min="0" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Bảo hành (tháng)</label>
+                        <input type="number" name="WarrantyMonths" value="@Model.WarrantyMonths" class="form-control" min="0" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header fw-semibold"><i class="bi bi-gear me-2"></i>Tùy chọn</div>
+                <div class="card-body">
+                    <div class="form-check form-switch mb-2">
+                        <input class="form-check-input" type="checkbox" name="IsFeatured" id="isFeatured" value="true" @(Model.IsFeatured ? "checked" : "") />
+                        <label class="form-check-label" for="isFeatured">Sản phẩm nổi bật</label>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="IsHidden" id="isHidden" value="true" @(Model.IsHidden ? "checked" : "") />
+                        <label class="form-check-label" for="isHidden">Ẩn sản phẩm</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="bi bi-check-lg me-2"></i>Lưu sản phẩm
+                </button>
+                <a href="/manage/products/index" class="btn btn-outline-secondary">Hủy</a>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+<script>
+function addSpec() {
+    const row = document.createElement('div');
+    row.className = 'row g-2 mb-2 spec-row';
+    row.innerHTML = `
+        <div class="col-5"><input type="text" name="SpecKeys" class="form-control form-control-sm" placeholder="Tên thông số" /></div>
+        <div class="col-6"><input type="text" name="SpecValues" class="form-control form-control-sm" placeholder="Giá trị" /></div>
+        <div class="col-1"><button type="button" class="btn btn-sm btn-outline-danger" onclick="removeSpec(this)"><i class="bi bi-x"></i></button></div>
+    `;
+    document.getElementById('specRows').appendChild(row);
+}
+function removeSpec(btn) {
+    btn.closest('.spec-row').remove();
+}
+</script>
+}

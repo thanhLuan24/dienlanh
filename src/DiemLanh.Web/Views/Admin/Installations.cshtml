@@ -1,0 +1,89 @@
+@model DiemLanh.Application.Common.PagedResult<DiemLanh.Application.DTOs.Order.InstallationDto>
+@using DiemLanh.Domain.Enums
+@{
+    ViewData["Title"] = "Quản lý Lịch lắp đặt";
+    Layout = "~/Views/Admin/_AdminLayout.cshtml";
+    var filter = ViewBag.Filter as DiemLanh.Application.DTOs.Order.InstallationFilterDto ?? new();
+    var stores = ViewBag.Stores as IEnumerable<DiemLanh.Application.DTOs.Admin.StoreSimpleDto> ?? Enumerable.Empty<DiemLanh.Application.DTOs.Admin.StoreSimpleDto>();
+    var selectedStoreId = ViewBag.SelectedStoreId as int?;
+}
+
+<form method="get" action="/admin/installations" class="adm-filter-bar">
+    <div class="adm-search">
+        <i class="bi bi-search"></i>
+        <input type="text" name="Keyword" value="@filter.Keyword" placeholder="Mã đơn, tên khách, SĐT..."/>
+    </div>
+    <select name="storeId" onchange="this.form.submit()" style="background:var(--charcoal);border:1px solid var(--grey-dark);color:var(--black);padding:8px 12px;border-radius:6px;font-size:.85rem;outline:none">
+        <option value="">-- Tất cả cửa hàng --</option>
+        @foreach (var s in stores)
+        {
+            <option value="@s.Id" selected="@(selectedStoreId == s.Id)">@s.Name</option>
+        }
+    </select>
+    <select name="Status" onchange="this.form.submit()" style="background:var(--charcoal);border:1px solid var(--grey-dark);color:var(--black);padding:8px 12px;border-radius:6px;font-size:.85rem;outline:none">
+        <option value="">-- Tất cả trạng thái --</option>
+        <option value="Scheduled" selected="@(filter.Status == InstallationStatus.Scheduled)">Đã lên lịch</option>
+        <option value="InProgress" selected="@(filter.Status == InstallationStatus.InProgress)">Đang lắp đặt</option>
+        <option value="Completed" selected="@(filter.Status == InstallationStatus.Completed)">Hoàn thành</option>
+        <option value="Cancelled" selected="@(filter.Status == InstallationStatus.Cancelled)">Đã hủy</option>
+    </select>
+    <button type="submit" class="btn-adm btn-adm-primary"><i class="bi bi-search"></i> Lọc</button>
+    <a href="/admin/installations" class="btn-adm btn-adm-outline">Xóa bộ lọc</a>
+</form>
+
+<div class="adm-table-wrap">
+    <table class="adm-table">
+        <thead>
+            <tr>
+                <th>Mã đơn</th>
+                <th>Cửa hàng</th>
+                <th>Khách hàng</th>
+                <th>Địa chỉ lắp</th>
+                <th>Ngày & Giờ</th>
+                <th>KTV</th>
+                <th>Trạng thái</th>
+                <th>Cập nhật</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Items)
+            {
+                <tr>
+                    <td style="font-family:var(--font-mono);font-weight:700;color:var(--neon)">#@item.OrderCode</td>
+                    <td style="font-weight:600">@item.StoreName</td>
+                    <td>
+                        <div style="font-weight:600">@item.CustomerName</div>
+                        <div style="font-size:.75rem;color:var(--grey-mid)">@item.CustomerPhone</div>
+                    </td>
+                    <td style="font-size:.85rem;max-width:200px">@item.InstallationAddress</td>
+                    <td>
+                        <div style="font-weight:600">@item.ScheduledDate.ToString("dd/MM/yyyy")</div>
+                        <div style="font-size:.75rem;color:var(--grey-mid)">@item.ScheduledTime.ToString("HH:mm")</div>
+                    </td>
+                    <td>@(item.TechnicianName ?? "Chưa phân công")</td>
+                    <td>
+                        <span class="badge-pill @(item.Status == InstallationStatus.Completed ? "badge-success" : item.Status == InstallationStatus.InProgress ? "badge-warning" : "badge-grey")">
+                            @item.StatusDisplay
+                        </span>
+                    </td>
+                    <td>
+                        <form method="post" action="/admin/installations/@item.Id/update-status" style="display:flex;gap:4px">
+                            @Html.AntiForgeryToken()
+                            <select name="status" class="adm-input" style="padding:4px 8px;font-size:.75rem;width:auto">
+                                <option value="Scheduled" selected="@(item.Status == InstallationStatus.Scheduled)">Đã lên lịch</option>
+                                <option value="InProgress" selected="@(item.Status == InstallationStatus.InProgress)">Đang lắp đặt</option>
+                                <option value="Completed" selected="@(item.Status == InstallationStatus.Completed)">Hoàn thành</option>
+                                <option value="Cancelled" selected="@(item.Status == InstallationStatus.Cancelled)">Đã hủy</option>
+                            </select>
+                            <button type="submit" class="btn-adm btn-adm-sm btn-adm-primary">Lưu</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+            @if (!Model.Items.Any())
+            {
+                <tr><td colspan="8" style="text-align:center;color:var(--grey-mid);padding:3rem">Không có lịch lắp đặt nào</td></tr>
+            }
+        </tbody>
+    </table>
+</div>
